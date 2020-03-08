@@ -16,8 +16,9 @@ def boom(board_dict, start_p):
         representation of each value.
     start_p -- A 2D position (x, y) means that the original starting point of boom.
     """
-    delete_stack(board_dict, start_p)
-    for stack in board_dict.keys():
+
+    del board_dict[start_p]
+    for stack in list(board_dict.keys()):
         if check_in33(start_p, stack) and int(board_dict[stack][1:]) != 0:
             boom(board_dict, stack)
 
@@ -41,10 +42,6 @@ def check_black_exist(board_dict):
             return True
     return False
 
-def refresh(board_dict):
-    for k, v in list(board_dict.items()):
-        if int(v[1:]) == 0:
-            del board_dict[k]
 
 
 def initial_board(data):
@@ -69,8 +66,7 @@ def main():
     # TODO: find and print winning action sequence
     board_dict = initial_board(data)
     print_board(board_dict)
-    boom(board_dict, (2, 4))
-    refresh(board_dict)
+    boom(board_dict, (1, 4))
     print_board(board_dict)
 
 
@@ -81,3 +77,4 @@ def move_stack(board_dict, initial_pos, final_pos):
 
 if __name__ == '__main__':
     main()
+
