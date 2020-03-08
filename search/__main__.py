@@ -41,6 +41,11 @@ def check_black_exist(board_dict):
             return True
     return False
 
+def refresh(board_dict):
+    for position in board_dict.keys():
+        if int(board_dict[position][1:]) == 0:
+            board_dict.pop(position)
+
 
 def initial_board(data):
     """
