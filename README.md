@@ -1,2 +1,0 @@
-# AI-Project-PartA
- 
