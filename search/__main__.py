@@ -1,6 +1,6 @@
 import sys
 import json
-
+import copy
 from search.util import print_move, print_boom, print_board
 
 
@@ -16,11 +16,44 @@ def boom(board_dict, start_p):
         representation of each value.
     start_p -- A 2D position (x, y) means that the original starting point of boom.
     """
-
-    del board_dict[start_p]
+    if start_p in board_dict:
+        del board_dict[start_p]
     for stack in list(board_dict.keys()):
         if check_in33(start_p, stack) and (stack in board_dict):
             boom(board_dict, stack)
+
+
+def cal_mark(board_dict):
+    mark_dict = {}
+    black_dict = copy.deepcopy(board_dict)
+
+    for key in list(black_dict.keys()):
+        if black_dict[key][0] == "W":
+            del black_dict[key]
+
+    print_board(black_dict)
+
+    for x in range(8):
+        for y in range(8):
+            if (x, y) in black_dict:
+                mark_dict[(x, y)]= 0
+                continue
+            tmp_board = copy.deepcopy(black_dict)
+            boom(tmp_board, (x, y))
+            mark_dict[(x, y)] = compare_boom(black_dict, tmp_board)
+    return mark_dict
+
+
+def compare_boom(board_dict, new_dict):
+    number_b_original = 0
+    number_new = 0
+    for position in board_dict.keys():
+        if board_dict[position][0] == "B":
+            number_b_original += 1
+    for position in new_dict.keys():
+        if board_dict[position][0] == "B":
+            number_new += 1
+    return number_b_original - number_new
 
 
 def delete_stack(board_dict, del_position):
@@ -64,9 +97,9 @@ def main():
 
     # TODO: find and print winning action sequence
     board_dict = initial_board(data)
+    mark_dict = cal_mark(board_dict)
     print_board(board_dict)
-    boom(board_dict, (1, 1))
-    print_board(board_dict)
+    print_board(mark_dict)
 
 
 def move_stack(board_dict, initial_pos, final_pos):
