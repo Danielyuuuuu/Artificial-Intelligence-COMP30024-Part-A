@@ -67,5 +67,13 @@ def main():
     boom(board_dict, (1, 1))
     print_board(board_dict)
 
+    move_stack(board_dict, (1, 4), (2, 4))
+    print_board(board_dict)
+
+def move_stack(board_dict, initial_pos, final_pos):
+    board_dict[final_pos] = board_dict[initial_pos]
+    board_dict.pop(initial_pos)
+
+
 if __name__ == '__main__':
     main()
