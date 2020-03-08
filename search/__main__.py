@@ -19,7 +19,7 @@ def boom(board_dict, start_p):
 
     del board_dict[start_p]
     for stack in list(board_dict.keys()):
-        if check_in33(start_p, stack) and int(board_dict[stack][1:]) != 0:
+        if check_in33(start_p, stack) and (stack in board_dict):
             boom(board_dict, stack)
 
 
@@ -41,7 +41,6 @@ def check_black_exist(board_dict):
         if board_dict[key][0] == "B":
             return True
     return False
-
 
 
 def initial_board(data):
@@ -66,7 +65,7 @@ def main():
     # TODO: find and print winning action sequence
     board_dict = initial_board(data)
     print_board(board_dict)
-    boom(board_dict, (1, 4))
+    boom(board_dict, (1, 1))
     print_board(board_dict)
 
 
