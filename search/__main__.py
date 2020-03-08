@@ -42,9 +42,9 @@ def check_black_exist(board_dict):
     return False
 
 def refresh(board_dict):
-    for position in board_dict.keys():
-        if int(board_dict[position][1:]) == 0:
-            board_dict.pop(position)
+    for k, v in list(board_dict.items()):
+        if int(v[1:]) == 0:
+            del board_dict[k]
 
 
 def initial_board(data):
@@ -69,11 +69,10 @@ def main():
     # TODO: find and print winning action sequence
     board_dict = initial_board(data)
     print_board(board_dict)
-    boom(board_dict, (1, 1))
+    boom(board_dict, (2, 4))
+    refresh(board_dict)
     print_board(board_dict)
 
-    move_stack(board_dict, (1, 4), (2, 4))
-    print_board(board_dict)
 
 def move_stack(board_dict, initial_pos, final_pos):
     board_dict[final_pos] = board_dict[initial_pos]
