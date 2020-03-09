@@ -24,8 +24,15 @@ def boom(board_dict, start_p):
 
 
 def potential_way(board_dict, white_pos):
+    """
+    This function is to find all the valid moves for a current white position
+    board_dict -- same as before
+    white_pos -- the (x, y) form of the position need to be find.
+    """
     num_white = int(board_dict[white_pos][1:])
     potential_aims = []
+
+    # try each distance, and different divide way
     for distance in range(1, num_white + 1):
         for num_go in range(1, num_white + 1):
             right = (white_pos[0] + distance, white_pos[1])
@@ -58,14 +65,16 @@ def potential_way(board_dict, white_pos):
 
 
 def cal_mark(board_dict):
+    """
+    Calculate the mark for each position on the board that can boom. For a position (1,1) has mark 2, meaning that
+    if a white boom on (1,1), it will destroy 2 stacks of black.
+    """
     mark_dict = {}
     black_dict = copy.deepcopy(board_dict)
 
     for key in list(black_dict.keys()):
         if black_dict[key][0] == "W":
             del black_dict[key]
-
-    print_board(black_dict)
 
     for x in range(8):
         for y in range(8):
@@ -79,6 +88,9 @@ def cal_mark(board_dict):
 
 
 def compare_boom(board_dict, new_dict):
+    """
+    calculate how may black stacks was destroyed by comparing the original board.
+    """
     number_b_original = 0
     number_new = 0
     for position in board_dict.keys():
@@ -88,11 +100,6 @@ def compare_boom(board_dict, new_dict):
         if board_dict[position][0] == "B":
             number_new += 1
     return number_b_original - number_new
-
-
-def delete_stack(board_dict, del_position):
-    if del_position in board_dict.keys():
-        board_dict[del_position] = board_dict[del_position][0] + "0"
 
 
 def check_in33(stack_a, stack_b):
@@ -123,6 +130,7 @@ def initial_board(data):
         board_dict[(stack[1], stack[2])] = "B" + str(stack[0])
 
     return board_dict
+
 
 def move_stack(board_dict, initial_pos, final_pos):
     board_dict[final_pos] = board_dict[initial_pos]
@@ -183,9 +191,9 @@ def dijsktra(original_board_dict, initial_pos, final_pos):
     print(shortest_path[::-1])
 
 
-
 def distance_between_positions(position_one, position_two):
     return abs(position_one[0] - position_two[0]) + abs(position_one[1] - position_two[1])
+
 
 def main():
     with open(sys.argv[1]) as file:
