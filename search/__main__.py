@@ -129,14 +129,19 @@ def move_stack(board_dict, initial_pos, final_pos):
     board_dict.pop(initial_pos)
 
 
-def dijsktra(board_dict, initial_pos, final_pos):
+def dijsktra(original_board_dict, initial_pos, final_pos):
 
     paths_dict = {initial_pos: (initial_pos, 0)}
     current_pos = initial_pos
     visited_pos = set()
 
+    board_dict = copy.deepcopy(original_board_dict)
+    num_of_stack = original_board_dict[initial_pos]
+    board_dict.pop(initial_pos)
+
     # Keeps iterating until it reaches the final position
     while current_pos != final_pos:
+        board_dict[current_pos] = num_of_stack
         visited_pos.add(current_pos)
         potential_moves = potential_way(board_dict, current_pos)
         
@@ -151,8 +156,21 @@ def dijsktra(board_dict, initial_pos, final_pos):
                 if paths_dict[potential_move][1] > cost:
                     paths_dict[potential_move] = (current_pos, cost)
         
-        current_pos = min(paths_dict.keys(), key=(lambda k: paths_dict[k]))
-                   
+        
+        # To find a position with the least cost
+        min_cost = 65
+        min_position = None
+        for position in paths_dict:
+            if position != paths_dict[position][0] and position not in visited_pos:
+                if paths_dict[position][1] < min_cost:
+                    min_cost = paths_dict[position][1]
+                    min_position = position
+
+        current_pos = min_position
+
+
+        #print(paths_dict)
+        #print("The current_pos is ", current_pos)
 
     shortest_path = []
 
@@ -161,8 +179,8 @@ def dijsktra(board_dict, initial_pos, final_pos):
         shortest_path.append(current_pos)
         previous_pos = paths_dict[current_pos][0]
         current_pos = previous_pos
-    
-    print(shortest_path)
+    shortest_path.append(initial_pos)
+    print(shortest_path[::-1])
 
 
 
@@ -182,7 +200,7 @@ def main():
     print(potential_way(board_dict, (1, 1)))
 
 
-    #dijsktra(board_dict, (1, 1), (0, 1))
+    dijsktra(board_dict, (1, 1), (0, 3))
 
 
 if __name__ == '__main__':
