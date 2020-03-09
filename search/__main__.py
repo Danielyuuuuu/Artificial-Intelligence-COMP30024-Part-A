@@ -124,6 +124,50 @@ def initial_board(data):
 
     return board_dict
 
+def move_stack(board_dict, initial_pos, final_pos):
+    board_dict[final_pos] = board_dict[initial_pos]
+    board_dict.pop(initial_pos)
+
+
+def dijsktra(board_dict, initial_pos, final_pos):
+
+    paths_dict = {initial_pos: (initial_pos, 0)}
+    current_pos = initial_pos
+    visited_pos = set()
+
+    # Keeps iterating until it reaches the final position
+    while current_pos != final_pos:
+        visited_pos.add(current_pos)
+        potential_moves = potential_way(board_dict, current_pos)
+        
+        # Try all the potential moves and check which one has the least cost
+        for potential_move in potential_moves:
+            potential_move = potential_move[0]
+            cost = distance_between_positions(current_pos, potential_move) + paths_dict[current_pos][1]
+
+            if potential_move not in paths_dict:
+                paths_dict[potential_move] = (current_pos, cost)
+            else:
+                if paths_dict[potential_move][1] > cost:
+                    paths_dict[potential_move] = (current_pos, cost)
+        
+        current_pos = min(paths_dict.keys(), key=(lambda k: paths_dict[k]))
+                   
+
+    shortest_path = []
+
+    # Back tracking the shortest path
+    while current_pos is not initial_pos:
+        shortest_path.append(current_pos)
+        previous_pos = paths_dict[current_pos][0]
+        current_pos = previous_pos
+    
+    print(shortest_path)
+
+
+
+def distance_between_positions(position_one, position_two):
+    return abs(position_one[0] - position_two[0]) + abs(position_one[1] - position_two[1])
 
 def main():
     with open(sys.argv[1]) as file:
@@ -135,12 +179,10 @@ def main():
 
     print_board(mark_dict)
     print_board(board_dict)
-    print(potential_way(board_dict, (2, 2)))
+    print(potential_way(board_dict, (1, 1)))
 
 
-def move_stack(board_dict, initial_pos, final_pos):
-    board_dict[final_pos] = board_dict[initial_pos]
-    board_dict.pop(initial_pos)
+    #dijsktra(board_dict, (1, 1), (0, 1))
 
 
 if __name__ == '__main__':
