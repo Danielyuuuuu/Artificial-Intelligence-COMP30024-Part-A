@@ -23,6 +23,40 @@ def boom(board_dict, start_p):
             boom(board_dict, stack)
 
 
+def potential_way(board_dict, white_pos):
+    num_white = int(board_dict[white_pos][1:])
+    potential_aims = []
+    for distance in range(1, num_white + 1):
+        for num_go in range(1, num_white + 1):
+            right = (white_pos[0] + distance, white_pos[1])
+            left = (white_pos[0] - distance, white_pos[1])
+            up = (white_pos[0], white_pos[1] + distance)
+            down = (white_pos[0], white_pos[1] - distance)
+
+            if right[0] <= 7:
+                if right not in board_dict:
+                    potential_aims.append([right, num_go])
+                elif board_dict[right][0] != "B":
+                    potential_aims.append([right, num_go])
+            if left[0] >= 0:
+                if left not in board_dict:
+                    potential_aims.append([left, num_go])
+                elif board_dict[left][0] != "B":
+                    potential_aims.append([left, num_go])
+            if up[1] <= 7:
+                if up not in board_dict:
+                    potential_aims.append([up, num_go])
+                elif board_dict[up][0] != "B":
+                    potential_aims.append([up, num_go])
+            if down[1] >= 0:
+                if down not in board_dict:
+                    potential_aims.append([down, num_go])
+                elif board_dict[down][0] != "B":
+                    potential_aims.append([down, num_go])
+
+    return potential_aims
+
+
 def cal_mark(board_dict):
     mark_dict = {}
     black_dict = copy.deepcopy(board_dict)
@@ -98,8 +132,10 @@ def main():
     # TODO: find and print winning action sequence
     board_dict = initial_board(data)
     mark_dict = cal_mark(board_dict)
-    print_board(board_dict)
+
     print_board(mark_dict)
+    print_board(board_dict)
+    print(potential_way(board_dict, (2, 2)))
 
 
 def move_stack(board_dict, initial_pos, final_pos):
