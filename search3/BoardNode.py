@@ -41,7 +41,7 @@ class BoardNode:
         self.current_board_dict -- same as before
         white_pos -- the (x, y) form of the position need to be find.
         """
-        num_white = self.get_color(white_pos)
+        num_white = self.get_num(white_pos)
         potential_aims = []
 
         # try each distance, and different divide way
