@@ -126,19 +126,23 @@ class BoardNode:
         black_dict = black_node.current_board_dict
 
         for key in list(black_dict.keys()):
+ 
             if black_dict[key][0] == "W":
                 del black_dict[key]
-        tmp_board_node = copy.deepcopy(black_node)
+    
         for x in range(8):
             for y in range(8):
-                if (x, y) in black_dict:
+                tmp_board_node = copy.deepcopy(black_node)
+              
+            
+                if (x, y) in black_dict.keys():             
                     continue
-                black_node.boom((x, y))
-                print((x, y))
+       
+                tmp_board_node.boom((x, y))
+           
                 tmp_mark = BoardNode.compare_boom(black_node.current_board_dict, tmp_board_node.current_board_dict)
-                print(tmp_mark)
-                print_board(black_node.current_board_dict, "afterboom")
-                print_board(tmp_board_node.current_board_dict, "before")
+              
+              
                 if tmp_mark:
                     mark_dict[(x, y)] = tmp_mark
         print_board(mark_dict, "markDict")
@@ -185,6 +189,6 @@ class BoardNode:
         """
         calculate how may black stacks was destroyed by comparing the original board.
         """
-        return len(new_dict) - len(board_dict)
+        return -(len(new_dict) - len(board_dict))
 
 
