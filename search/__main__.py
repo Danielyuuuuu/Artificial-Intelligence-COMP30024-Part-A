@@ -151,22 +151,24 @@ def dijsktra(original_board_dict, initial_pos, final_pos):
     while current_pos != final_pos:
         board_dict[current_pos] = num_of_stack
         visited_pos.add(current_pos)
+
         potential_moves = potential_way(board_dict, current_pos)
         
-        # Try all the potential moves and check which one has the least cost
-        for potential_move in potential_moves:
-            potential_move = potential_move[0]
-            cost = distance_between_positions(current_pos, potential_move) + paths_dict[current_pos][1]
+        if len(potential_moves) != 0:
+            # Try all the potential moves and check which one has the least cost
+            for potential_move in potential_moves:
+                potential_move = potential_move[0]
+                cost = distance_between_positions(current_pos, potential_move) + paths_dict[current_pos][1]
 
-            if potential_move not in paths_dict:
-                paths_dict[potential_move] = (current_pos, cost)
-            else:
-                if paths_dict[potential_move][1] > cost:
+                if potential_move not in paths_dict:
                     paths_dict[potential_move] = (current_pos, cost)
+                else:
+                    if paths_dict[potential_move][1] > cost:
+                        paths_dict[potential_move] = (current_pos, cost)
         
         
         # To find a position with the least cost
-        min_cost = 65
+        min_cost = float('inf')
         min_position = None
         for position in paths_dict:
             if position != paths_dict[position][0] and position not in visited_pos:
@@ -174,11 +176,13 @@ def dijsktra(original_board_dict, initial_pos, final_pos):
                     min_cost = paths_dict[position][1]
                     min_position = position
 
-        current_pos = min_position
+        # Check of there is any unexplored position
+        if min_position is None:
+            print("Stack can't be moved to the destination")
+            return
+        else:
+            current_pos = min_position
 
-
-        #print(paths_dict)
-        #print("The current_pos is ", current_pos)
 
     shortest_path = []
 
@@ -205,10 +209,10 @@ def main():
 
     print_board(mark_dict)
     print_board(board_dict)
-    print(potential_way(board_dict, (1, 1)))
+    #print(potential_way(board_dict, (1, 0)))
 
 
-    dijsktra(board_dict, (1, 1), (0, 3))
+    dijsktra(board_dict, (1, 0), (3, 3))
 
 
 if __name__ == '__main__':
