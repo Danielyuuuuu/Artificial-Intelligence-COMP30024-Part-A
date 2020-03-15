@@ -199,16 +199,17 @@ def distance_between_positions(position_one, position_two):
     return abs(position_one[0] - position_two[0]) + abs(position_one[1] - position_two[1])
 
 
+# To trim the four sides of the board that do not have any stack
 def trim_board(board_dict):
 
-    trimed_board = copy.deepcopy(board_dict)
+    trimmed_board = copy.deepcopy(board_dict)
 
     # Trim top left of the board
     for y in range(7, -1, -1):
         for x in range(8):
             if (x, y) not in board_dict:
                 if not check_any_stack_arround(board_dict, (x, y)):
-                    trimed_board[(x, y)] = 'X0'
+                    trimmed_board[(x, y)] = 'X0'
                     
                 else:
                     break
@@ -220,7 +221,7 @@ def trim_board(board_dict):
         for x in range(7, -1, -1):
             if (x, y) not in board_dict:
                 if not check_any_stack_arround(board_dict, (x, y)):
-                    trimed_board[(x, y)] = 'X0'
+                    trimmed_board[(x, y)] = 'X0'
                     
                 else:
                     break
@@ -232,7 +233,7 @@ def trim_board(board_dict):
         for x in range(8):
             if (x, y) not in board_dict:
                 if not check_any_stack_arround(board_dict, (x, y)):
-                    trimed_board[(x, y)] = 'X0'
+                    trimmed_board[(x, y)] = 'X0'
                     
                 else:
                     break
@@ -244,23 +245,30 @@ def trim_board(board_dict):
         for x in range(7, -1, -1):
             if (x, y) not in board_dict:
                 if not check_any_stack_arround(board_dict, (x, y)):
-                    trimed_board[(x, y)] = 'X0'
+                    trimmed_board[(x, y)] = 'X0'
                     
                 else:
                     break
             else:
                 break
-    return trimed_board
+
+    trimmed_board = delete_trim_if_it_make_the_board_disconnected(trimmed_board)
+    
+    return trimmed_board
         
 
-def check_if_board_are_disconnected(trimed_board):
+""" 
+To make sure that the trimmed board is not disconnected, and does not
+trap any stacks in the corner
+"""
+def delete_trim_if_it_make_the_board_disconnected(trimmed_board):
 
     rows_that_have_been_cut_entirely = []
     # Check from bottom up
     for y in range(8):
         row_has_been_cut_entirely = True
         for x in range(8):
-            if (((x, y) in trimed_board) and trimed_board[(x, y)] != 'X0') or (x, y) not in trimed_board:
+            if (((x, y) in trimmed_board) and trimmed_board[(x, y)] != 'X0') or (x, y) not in trimmed_board:
                 row_has_been_cut_entirely = False
                 break
         if row_has_been_cut_entirely:
@@ -273,15 +281,82 @@ def check_if_board_are_disconnected(trimed_board):
     for x in range(8):
         column_has_been_cut_entirely = True
         for y in range(8):
-            if (((x, y) in trimed_board) and trimed_board[(x, y)] != 'X0') or (x, y) not in trimed_board:
+            if (((x, y) in trimmed_board) and trimmed_board[(x, y)] != 'X0') or (x, y) not in trimmed_board:
                 column_has_been_cut_entirely = False
                 break
         if column_has_been_cut_entirely:
-            columns_that_have_been_cut_entirely.append(y)
-    
-    print(rows_that_have_been_cut_entirely)  
-    print(columns_that_have_been_cut_entirely) 
+            columns_that_have_been_cut_entirely.append(x)
 
+    
+    rows_that_have_been_cut_entirely = lines_that_separate_the_board(rows_that_have_been_cut_entirely)
+    columns_that_have_been_cut_entirely = lines_that_separate_the_board(columns_that_have_been_cut_entirely)
+    
+    
+    # Delete the trimmed position that has disconnected the board
+    if len(rows_that_have_been_cut_entirely) != 0:
+        line = find_line_that_has_the_least_trimmed_positions(trimmed_board, True)
+        for y in range(8):
+            if ((line, y) in trimmed_board) and trimmed_board[(line, y)] == 'X0':
+                del trimmed_board[(line, y)]
+
+    if len(columns_that_have_been_cut_entirely) != 0:
+        line = find_line_that_has_the_least_trimmed_positions(trimmed_board, False)
+        for x in range(8):
+            if ((x, line) in trimmed_board) and trimmed_board[(x, line)] == 'X0':
+                del trimmed_board[(x, line)]
+    
+    
+
+    return trimmed_board
+   
+
+# Find the row or colomn that has disconnected the board
+def lines_that_separate_the_board(lines_that_have_been_cut_entirely):
+    if len(lines_that_have_been_cut_entirely) != 0:
+        for i in range(8):
+            if i in lines_that_have_been_cut_entirely:
+                lines_that_have_been_cut_entirely.remove(i)
+            else:
+                break
+        for i in range(7, -1, -1):
+            if i in lines_that_have_been_cut_entirely:
+                lines_that_have_been_cut_entirely.remove(i)
+            else:
+                break
+    return lines_that_have_been_cut_entirely
+        
+
+# Fine the row or column that has the least trimmed positions
+def find_line_that_has_the_least_trimmed_positions(trimmed_board, is_column):
+    
+    line_number = None
+    min_number_of_trimmed_positions = 9
+    if is_column:
+        for x in range(8):
+            current_number_of_trimmed_positions = 0
+            for y in range(8):
+                if (x, y) in trimmed_board and trimmed_board[(x, y)] == 'X0':
+                    current_number_of_trimmed_positions += 1
+            if current_number_of_trimmed_positions < min_number_of_trimmed_positions:
+                line_number = x
+                min_number_of_trimmed_positions = current_number_of_trimmed_positions
+                
+        
+    else:
+        for y in range(8):
+            current_number_of_trimmed_positions = 0
+            for x in range(8):
+                if (x, y) in trimmed_board and trimmed_board[(x, y)] == 'X0':
+                    current_number_of_trimmed_positions += 1
+
+            if current_number_of_trimmed_positions < min_number_of_trimmed_positions:
+                line_number = x
+                min_number_of_trimmed_positions = current_number_of_trimmed_positions
+        
+    return line_number            
+                    
+
+# Check if there is any stack around the potential trimming position
 def check_any_stack_arround(board_dict, current_pos):
     right = (current_pos[0] + 1, current_pos[1])
     left = (current_pos[0] - 1, current_pos[1])
@@ -323,6 +398,7 @@ def check_any_stack_arround(board_dict, current_pos):
     return False
 
 
+# Check if there is any stack in a given position
 def check_position_has_stack(board_dict, position, check_white_stack):
     if (0 <= position[0] < 8 and 0 <=  position[1] < 8):
         if check_white_stack:
@@ -348,12 +424,11 @@ def main():
     #print(potential_way(board_dict, (1, 0)))
 
 
-    dijsktra(board_dict, (1, 0), (3, 3))
+    #dijsktra(board_dict, (1, 0), (3, 3))
 
     trimed_board = trim_board(board_dict)
     print_board(trimed_board)
 
-    check_if_board_are_disconnected(trimed_board)
 
 if __name__ == '__main__':
     main()
