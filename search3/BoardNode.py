@@ -1,4 +1,5 @@
 import copy
+import time
 from search.util import print_move, print_boom, print_board
 
 
@@ -116,6 +117,15 @@ class BoardNode:
             self.current_board_dict.pop(initial_pos)
         else:
             self.current_board_dict[initial_pos] = "W" + str(num_init)
+
+    def check_win(self):
+        if not self.history_behaviors:
+            return False
+        if self.history_behaviors[-1][0] == "boom":
+            return not self.check_black_exist()
+        else:
+            tmp_node = self.stimulate_behavior(["boom", self.history_behaviors[-1][2]])
+            return not tmp_node.check_black_exist()
 
     def cal_mark(self):
         """

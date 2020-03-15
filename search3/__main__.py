@@ -1,6 +1,6 @@
 import sys
 import json
-
+import time
 from search.util import print_move, print_boom, print_board
 from search3.BoardNode import *
 
@@ -20,6 +20,31 @@ def initial_board(data):
     return board_dict
 
 
+def BFS(board_tree):
+
+    checking_list = [board_tree]
+    history =[]
+    for num_turn in range(240):
+        # print("Turns：   ", num_turn)
+        checking_index = 0
+        next_checking_list = []
+        for check_node in checking_list:
+            if check_node.current_board_dict in history:
+                continue
+            history.append(check_node.current_board_dict)
+
+            # print_board(check_node.current_board_dict)
+            if check_node.check_win():
+                return check_node.history_behaviors
+            check_node.stimulate_step()
+
+            next_checking_list += check_node.children_nodes
+
+        checking_list = copy.deepcopy(next_checking_list)
+
+    return None
+
+
 def main():
     with open(sys.argv[1]) as file:
         data = json.load(file)
@@ -31,18 +56,28 @@ def main():
     print_board(board_dict, "initial")
 
     board_tree = BoardNode(board_dict)
-    print_board(board_tree.board_mark_dict)
-    print("potential_behaviors:", board_tree.potential_behaviors)
-    print(board_tree.history_behaviors)
 
-    board_tree.stimulate_step()
+    time_start = time.time()
 
-    print_board(board_tree.children_nodes[1].current_board_dict, "next")
-    print("historyBehaviors", board_tree.children_nodes[1].history_behaviors)
-    print("historyBehaviors", board_tree.children_nodes[1].potential_behaviors)
-    board_tree.children_nodes[1].stimulate_step()
-    print(board_tree.children_nodes[1].children_nodes)
-    print_board(board_tree.children_nodes[1].children_nodes[0].current_board_dict, "nextnext")
+    print(BFS(board_tree))
+    time_end = time.time()
+    print('time cost', time_end - time_start, 's')
+    return None
+    # print_board(board_tree.board_mark_dict)
+    # print("potential_behaviors:", board_tree.potential_behaviors)
+    # print(board_tree.history_behaviors)
+    #
+    # board_tree.stimulate_step()
+    #
+    # print_board(board_tree.children_nodes[1].current_board_dict, "next")
+    # print("historyBehaviors", board_tree.children_nodes[1].history_behaviors)
+    # print("historyBehaviors", board_tree.children_nodes[1].potential_behaviors)
+    # board_tree.children_nodes[1].stimulate_step()
+    # print(board_tree.children_nodes[1].children_nodes)
+    # print_board(board_tree.children_nodes[1].children_nodes[0].current_board_dict, "nextnext")
+    # print(board_tree.children_nodes[1].children_nodes[0].history_behaviors, "nextnext")
+    # print_board(board_tree.children_nodes[1].children_nodes[0].board_mark_dict, "nextnext")
+
 
 if __name__ == '__main__':
     main()
