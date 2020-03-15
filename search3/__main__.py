@@ -26,21 +26,25 @@ def BFS(board_tree):
     history =[]
     for num_turn in range(240):
         # print("Turns：   ", num_turn)
-        checking_index = 0
         next_checking_list = []
+        print("length of checking list:", len(checking_list))
         for check_node in checking_list:
             if check_node.current_board_dict in history:
                 continue
-            history.append(check_node.current_board_dict)
 
             # print_board(check_node.current_board_dict)
             if check_node.check_win():
                 return check_node.history_behaviors
-            check_node.stimulate_step()
 
-            next_checking_list += check_node.children_nodes
+            history.append(check_node.current_board_dict)
 
-        checking_list = copy.deepcopy(next_checking_list)
+            next_checking_list.append(check_node)
+
+        checking_list = []
+        for next_check_node in next_checking_list:
+            next_check_node.stimulate_step()
+            checking_list += next_check_node.children_nodes
+
 
     return None
 

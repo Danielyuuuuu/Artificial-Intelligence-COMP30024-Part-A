@@ -1,12 +1,13 @@
 import sys
 import json
 import copy
+import time
 from search.util import print_move, print_boom, print_board
 
 
 class BoardNode:
     current_board_dict = {}
-    history_board_list = []
+    history_behaviors = []
     potential_behaviors = []
     next_nodes = []
 
@@ -14,14 +15,15 @@ class BoardNode:
         self.current_board_dict = board_dict
         self.potential_behaviors = find_potential_behaviors(board_dict)
         if not history:
-            self.history_board_list.append(board_dict)
+            self.history_behaviors.append(board_dict)
         else:
-            self.history_board_list = copy.deepcopy(history)
-            self.history_board_list.append(board_dict)
+            self.history_behaviors = copy.deepcopy(history)
+            self.history_behaviors.append(board_dict)
 
     def stimulate_step(self):
+        self.next_nodes = []
         for behavior in self.potential_behaviors:
-            tmp_node = BoardNode(stimulate_behavior(self.current_board_dict, behavior), self.history_board_list)
+            tmp_node = BoardNode(stimulate_behavior(self.current_board_dict, behavior), self.history_behaviors)
             self.next_nodes.append(tmp_node)
 
 
@@ -189,6 +191,49 @@ def move_stack(board_dict, initial_pos, final_pos, num_go):
         board_dict[initial_pos] = "W" + str(num_init)
 
 
+def BFS(board_tree):
+
+    time_start = time.time()
+
+
+
+    node_list = [board_tree]
+
+    history_dict = []
+
+    a = 0
+
+    for turn in range(240):
+        node_list_next = []
+        print("length of checking list:", len(node_list))
+        for node_list_index in range(0, len(node_list)):
+            tmp_node = node_list[node_list_index]
+            if not check_black_exist(tmp_node.current_board_dict):
+                print("win!!!!!!!!!")
+                print_board(tmp_node.history_behaviors[-2])
+                time_end = time.time()
+                print('time cost', time_end - time_start, 's')
+                return "Win!!!!!!!!!!!!!!!!!"
+            if tmp_node.current_board_dict in history_dict:
+                continue
+            #print("Turns: ",turn)
+            #print(node_list_index)
+            a += 1
+            #print("a :",a)
+            #print(len(node_list))
+
+            node_list_next.append(tmp_node)
+            history_dict.append(tmp_node.current_board_dict)
+
+        node_list = []
+        for node_index in range(0, len(node_list_next)):
+            time_start = time.time()
+            node_list_next[node_index].stimulate_step()
+            time_end = time.time()
+            print('stimulate_step time cost', time_end - time_start, 's')
+            stimulate_node = node_list_next[node_index].next_nodes
+            node_list += stimulate_node
+
 def main():
     with open(sys.argv[1]) as file:
         data = json.load(file)
@@ -201,37 +246,16 @@ def main():
     print_board(board_dict, "initial")
 
     board_tree = BoardNode(board_dict, [])
-    print_board(board_tree.current_board_dict)
-    node_list = [board_tree]
 
-    history_dict = []
+    time_start = time.time()
+    history = BFS(board_tree)
+    time_end = time.time()
+    print('time cost', time_end - time_start, 's')
 
-    a = 0
-    for turn in range(240):
-        node_list_next = []
+    return history
 
-        for node_list_index in range(0, len(node_list)):
-            tmp_node = node_list[node_list_index]
-            if not check_black_exist(tmp_node.current_board_dict):
-                print("win!!!!!!!!!")
-                print_board(tmp_node.history_board_list[-2])
-                return "Win!!!!!!!!!!!!!!!!!"
-            if tmp_node.current_board_dict in history_dict:
-                continue
-            print("Turns: ",turn)
-            print(node_list_index)
-            a += 1
-            print("a :",a)
-            print(len(node_list))
 
-            node_list_next.append(tmp_node)
-            history_dict.append(tmp_node.current_board_dict)
 
-        node_list = []
-        for node_index in range(0, len(node_list_next)):
-            node_list_next[node_index].stimulate_step()
-            stimulate_node = node_list_next[node_index].next_nodes
-            node_list += stimulate_node
 
 
 if __name__ == '__main__':

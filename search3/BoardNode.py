@@ -4,7 +4,7 @@ from search.util import print_move, print_boom, print_board
 
 
 class BoardNode:
-    father_node = []  # only one father node!
+
     children_nodes = []  # many nodes
 
     current_board_dict = {}
@@ -15,15 +15,13 @@ class BoardNode:
 
     def __init__(self, current_board_dict):
         self.current_board_dict = current_board_dict
+        time_start = time.time()
         self.board_mark_dict = self.cal_mark()
+        time_end = time.time()
+        print('cal mark time cost', time_end - time_start, 's')
         self.potential_behaviors = self.find_potential_behaviors()
 
     def refresh(self):
-
-        if self.history_behaviors[-1][0] == "boom":
-            self.board_mark_dict = self.cal_mark()
-        else:
-            self.board_mark_dict = self.father_node[0].board_mark_dict
 
         self.potential_behaviors = self.find_potential_behaviors()
 
@@ -174,8 +172,6 @@ class BoardNode:
         tmp_node.history_behaviors = copy.deepcopy(self.history_behaviors)
         #print("historyBehaviors:!!!!!!!", tmp_node.history_behaviors)
         tmp_node.history_behaviors.append(behavior)
-
-        tmp_node.father_node = [self]
 
         if behavior[0] == "boom":
             tmp_node.boom(behavior[1])
