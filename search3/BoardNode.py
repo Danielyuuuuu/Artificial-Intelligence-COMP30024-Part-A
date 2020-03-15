@@ -27,6 +27,7 @@ class BoardNode:
         self.potential_behaviors = self.find_potential_behaviors()
 
     def stimulate_step(self):
+        self.children_nodes = []
         for behavior in self.potential_behaviors:
             tmp_node = self.stimulate_behavior(behavior)
             self.children_nodes.append(tmp_node)
@@ -133,19 +134,12 @@ class BoardNode:
         for x in range(8):
             for y in range(8):
                 tmp_board_node = copy.deepcopy(black_node)
-              
-            
                 if (x, y) in black_dict.keys():             
                     continue
-       
                 tmp_board_node.boom((x, y))
-           
                 tmp_mark = BoardNode.compare_boom(black_node.current_board_dict, tmp_board_node.current_board_dict)
-              
-              
                 if tmp_mark:
                     mark_dict[(x, y)] = tmp_mark
-        print_board(mark_dict, "markDict")
         return mark_dict
 
     def find_potential_behaviors(self):
@@ -167,13 +161,18 @@ class BoardNode:
 
     def stimulate_behavior(self, behavior):
         tmp_node = copy.deepcopy(self)
+        tmp_node.history_behaviors = copy.deepcopy(self.history_behaviors)
+        #print("historyBehaviors:!!!!!!!", tmp_node.history_behaviors)
         tmp_node.history_behaviors.append(behavior)
-        tmp_node.father_node = self
+
+        tmp_node.father_node = [self]
+
         if behavior[0] == "boom":
             tmp_node.boom(behavior[1])
         else:
             tmp_node.move_stack(behavior[1], behavior[2], behavior[3])
-
+        #print_board(tmp_node.current_board_dict, "father node, ")
+        #print(tmp_node.history_behaviors)
         tmp_node.refresh()
         return tmp_node
 

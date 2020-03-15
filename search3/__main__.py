@@ -31,8 +31,18 @@ def main():
     print_board(board_dict, "initial")
 
     board_tree = BoardNode(board_dict)
-    print_board(board_tree.current_board_dict)
+    print_board(board_tree.board_mark_dict)
+    print("potential_behaviors:", board_tree.potential_behaviors)
+    print(board_tree.history_behaviors)
 
+    board_tree.stimulate_step()
+
+    print_board(board_tree.children_nodes[1].current_board_dict, "next")
+    print("historyBehaviors", board_tree.children_nodes[1].history_behaviors)
+    print("historyBehaviors", board_tree.children_nodes[1].potential_behaviors)
+    board_tree.children_nodes[1].stimulate_step()
+    print(board_tree.children_nodes[1].children_nodes)
+    print_board(board_tree.children_nodes[1].children_nodes[0].current_board_dict, "nextnext")
 
 if __name__ == '__main__':
     main()
