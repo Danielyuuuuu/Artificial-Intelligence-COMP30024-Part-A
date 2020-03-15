@@ -199,6 +199,142 @@ def distance_between_positions(position_one, position_two):
     return abs(position_one[0] - position_two[0]) + abs(position_one[1] - position_two[1])
 
 
+def trim_board(board_dict):
+
+    trimed_board = copy.deepcopy(board_dict)
+
+    # Trim top left of the board
+    for y in range(7, -1, -1):
+        for x in range(8):
+            if (x, y) not in board_dict:
+                if not check_any_stack_arround(board_dict, (x, y)):
+                    trimed_board[(x, y)] = 'X0'
+                    
+                else:
+                    break
+            else:
+                break
+    
+    # Trim top right of the board
+    for y in range(7, -1, -1):
+        for x in range(7, -1, -1):
+            if (x, y) not in board_dict:
+                if not check_any_stack_arround(board_dict, (x, y)):
+                    trimed_board[(x, y)] = 'X0'
+                    
+                else:
+                    break
+            else:
+                break
+
+    # Trim bottom left of the board
+    for y in range(8):
+        for x in range(8):
+            if (x, y) not in board_dict:
+                if not check_any_stack_arround(board_dict, (x, y)):
+                    trimed_board[(x, y)] = 'X0'
+                    
+                else:
+                    break
+            else:
+                break
+
+    # Trim bottom right of the board
+    for y in range(8):
+        for x in range(7, -1, -1):
+            if (x, y) not in board_dict:
+                if not check_any_stack_arround(board_dict, (x, y)):
+                    trimed_board[(x, y)] = 'X0'
+                    
+                else:
+                    break
+            else:
+                break
+    return trimed_board
+        
+
+def check_if_board_are_disconnected(trimed_board):
+
+    rows_that_have_been_cut_entirely = []
+    # Check from bottom up
+    for y in range(8):
+        row_has_been_cut_entirely = True
+        for x in range(8):
+            if (((x, y) in trimed_board) and trimed_board[(x, y)] != 'X0') or (x, y) not in trimed_board:
+                row_has_been_cut_entirely = False
+                break
+        if row_has_been_cut_entirely:
+            rows_that_have_been_cut_entirely.append(y)
+
+
+    columns_that_have_been_cut_entirely = []
+
+    # Check from left to right
+    for x in range(8):
+        column_has_been_cut_entirely = True
+        for y in range(8):
+            if (((x, y) in trimed_board) and trimed_board[(x, y)] != 'X0') or (x, y) not in trimed_board:
+                column_has_been_cut_entirely = False
+                break
+        if column_has_been_cut_entirely:
+            columns_that_have_been_cut_entirely.append(y)
+    
+    print(rows_that_have_been_cut_entirely)  
+    print(columns_that_have_been_cut_entirely) 
+
+def check_any_stack_arround(board_dict, current_pos):
+    right = (current_pos[0] + 1, current_pos[1])
+    left = (current_pos[0] - 1, current_pos[1])
+    up = (current_pos[0], current_pos[1] + 1)
+    down = (current_pos[0], current_pos[1] - 1)
+    right_right = (current_pos[0] + 2, current_pos[1])
+    left_left = (current_pos[0] - 2, current_pos[1])
+    up_up = (current_pos[0], current_pos[1] + 2)
+    down_down = (current_pos[0], current_pos[1] - 2)
+    up_left = (current_pos[0] - 1, current_pos[1] + 1)
+    up_right = (current_pos[0] + 1, current_pos[1] + 1)
+    down_left = (current_pos[0] -1, current_pos[1] - 1)
+    down_right = (current_pos[0] + 1, current_pos[1] - 1)
+
+    if check_position_has_stack(board_dict, right, False):
+        return True
+    elif check_position_has_stack(board_dict, left, False):
+        return True
+    elif check_position_has_stack(board_dict, up, False):
+        return True
+    elif check_position_has_stack(board_dict, down, False):
+        return True
+    elif check_position_has_stack(board_dict, right_right, True):
+        return True
+    elif check_position_has_stack(board_dict, left_left, True):
+        return True
+    elif check_position_has_stack(board_dict, up_up, True):
+        return True
+    elif check_position_has_stack(board_dict, down_down, True):
+        return True
+    elif check_position_has_stack(board_dict, up_left, False):
+        return True
+    elif check_position_has_stack(board_dict, up_right, False):
+        return True
+    elif check_position_has_stack(board_dict, down_left, False):
+        return True
+    elif check_position_has_stack(board_dict, down_right, False):
+        return True
+    return False
+
+
+def check_position_has_stack(board_dict, position, check_white_stack):
+    if (0 <= position[0] < 8 and 0 <=  position[1] < 8):
+        if check_white_stack:
+            if position in board_dict:
+                if board_dict[position][0] == 'W':
+                    return True
+        else: 
+            if position in board_dict:
+                return True
+    return False    
+
+
 def main():
     with open(sys.argv[1]) as file:
         data = json.load(file)
@@ -214,6 +350,10 @@ def main():
 
     dijsktra(board_dict, (1, 0), (3, 3))
 
+    trimed_board = trim_board(board_dict)
+    print_board(trimed_board)
+
+    check_if_board_are_disconnected(trimed_board)
 
 if __name__ == '__main__':
     main()
