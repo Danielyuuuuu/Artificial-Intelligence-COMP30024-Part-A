@@ -20,7 +20,7 @@ class BoardNode:
         self.mark_dict = mark_dict
 
         if not history:
-            self.history_behaviors = behavior
+            self.history_behaviors = [behavior]
         else:
             self.history_behaviors = copy.deepcopy(history)
             self.history_behaviors.append(behavior)
