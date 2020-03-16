@@ -7,55 +7,76 @@ def trim_board(board_dict):
     trimmed_board = {}
 
     # Trim top left of the board
-    for y in range(7, -1, -1):
-        for x in range(8):
+    continue_to_trim = True
+    for y in range(7, 3, -1):
+
+        if not continue_to_trim:
+            break
+
+        for x in range(4):
             if (x, y) not in board_dict:
                 if not check_any_stack_arround(board_dict, (x, y)):
                     trimmed_board[(x, y)] = 'X0'
-
+                    
                 else:
                     break
             else:
                 break
-
+    
     # Trim top right of the board
-    for y in range(7, -1, -1):
-        for x in range(7, -1, -1):
+    continue_to_trim = True
+    for y in range(7, 3, -1):
+
+        if not continue_to_trim:
+            break
+        
+        for x in range(7, 3, -1):
             if (x, y) not in board_dict:
                 if not check_any_stack_arround(board_dict, (x, y)):
                     trimmed_board[(x, y)] = 'X0'
-
+                    
                 else:
                     break
             else:
+                continue_to_trim = False
                 break
 
     # Trim bottom left of the board
-    for y in range(8):
-        for x in range(8):
+    continue_to_trim = True
+    for y in range(4):
+
+        if not continue_to_trim:
+            break
+
+        for x in range(4):
             if (x, y) not in board_dict:
                 if not check_any_stack_arround(board_dict, (x, y)):
                     trimmed_board[(x, y)] = 'X0'
-
+                    
                 else:
                     break
             else:
                 break
 
-    # Trim bottom right of the board
-    for y in range(8):
-        for x in range(7, -1, -1):
+    # Trim bottom right of the 
+    continue_to_trim = True
+    for y in range(4):
+
+        if not continue_to_trim:
+            break
+
+        for x in range(7, 3, -1):
             if (x, y) not in board_dict:
                 if not check_any_stack_arround(board_dict, (x, y)):
                     trimmed_board[(x, y)] = 'X0'
-
+                    
                 else:
                     break
             else:
                 break
 
     trimmed_board = delete_trim_if_it_make_the_board_disconnected(trimmed_board)
-
+    
     return trimmed_board
 
 
@@ -63,9 +84,8 @@ def trim_board(board_dict):
 To make sure that the trimmed board is not disconnected, and does not
 trap any stacks in the corner
 """
-
-
 def delete_trim_if_it_make_the_board_disconnected(trimmed_board):
+
     rows_that_have_been_cut_entirely = []
     # Check from bottom up
     for y in range(8):
@@ -76,6 +96,7 @@ def delete_trim_if_it_make_the_board_disconnected(trimmed_board):
                 break
         if row_has_been_cut_entirely:
             rows_that_have_been_cut_entirely.append(y)
+
 
     columns_that_have_been_cut_entirely = []
 
@@ -89,9 +110,11 @@ def delete_trim_if_it_make_the_board_disconnected(trimmed_board):
         if column_has_been_cut_entirely:
             columns_that_have_been_cut_entirely.append(x)
 
+    
     rows_that_have_been_cut_entirely = lines_that_separate_the_board(rows_that_have_been_cut_entirely)
     columns_that_have_been_cut_entirely = lines_that_separate_the_board(columns_that_have_been_cut_entirely)
-
+    
+    
     # Delete the trimmed position that has disconnected the board
     if len(rows_that_have_been_cut_entirely) != 0:
         line = find_line_that_has_the_least_trimmed_positions(trimmed_board, True)
@@ -104,6 +127,27 @@ def delete_trim_if_it_make_the_board_disconnected(trimmed_board):
         for x in range(8):
             if ((x, line) in trimmed_board) and trimmed_board[(x, line)] == 'X0':
                 del trimmed_board[(x, line)]
+
+    
+    for x in range(7):
+        for y in range(7):
+            pos_down_left = (x, y)
+            pos_down_right = (x + 1, y)
+            pos_up_left = (x, y + 1)
+            pos_up_right = (x + 1, y + 1)
+
+            if pos_down_left in trimmed_board and pos_up_right in trimmed_board:
+                if trimmed_board[pos_down_left] == "X0" and trimmed_board[pos_up_right] == "X0":
+                    if pos_down_right not in trimmed_board and pos_up_left not in trimmed_board:
+                        del trimmed_board[pos_down_left]
+                        del trimmed_board[pos_up_right]
+            
+            elif pos_down_right in trimmed_board and pos_up_left in trimmed_board:
+                if trimmed_board[pos_down_right] == "X0" and trimmed_board[pos_up_left] == "X0":
+                    if pos_down_left not in trimmed_board and pos_up_right not in trimmed_board:
+                        del trimmed_board[pos_down_right]
+                        del trimmed_board[pos_up_left]
+
 
     return trimmed_board
 
