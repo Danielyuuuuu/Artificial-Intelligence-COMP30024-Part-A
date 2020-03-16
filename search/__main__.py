@@ -291,6 +291,9 @@ def delete_trim_if_it_make_the_board_disconnected(trimmed_board):
     rows_that_have_been_cut_entirely = lines_that_separate_the_board(rows_that_have_been_cut_entirely)
     columns_that_have_been_cut_entirely = lines_that_separate_the_board(columns_that_have_been_cut_entirely)
     
+    print(rows_that_have_been_cut_entirely)
+    print(columns_that_have_been_cut_entirely)
+    print_board(trimmed_board)
     
     # Delete the trimmed position that has disconnected the board
     if len(rows_that_have_been_cut_entirely) != 0:
@@ -334,10 +337,17 @@ def find_line_that_has_the_least_trimmed_positions(trimmed_board, is_column):
     if is_column:
         for x in range(8):
             current_number_of_trimmed_positions = 0
+            breaked = False
             for y in range(8):
-                if (x, y) in trimmed_board and trimmed_board[(x, y)] == 'X0':
+
+                #!!!!!!!!!!!!!
+                if y in [0, 7] and (x, y) in trimmed_board and trimmed_board[(x, y)] == 'X0':
+                
+                    breaked = True
+                    break
+                elif (x, y) in trimmed_board and trimmed_board[(x, y)] == 'X0':
                     current_number_of_trimmed_positions += 1
-            if current_number_of_trimmed_positions < min_number_of_trimmed_positions:
+            if current_number_of_trimmed_positions < min_number_of_trimmed_positions and not breaked:
                 line_number = x
                 min_number_of_trimmed_positions = current_number_of_trimmed_positions
                 
@@ -345,11 +355,18 @@ def find_line_that_has_the_least_trimmed_positions(trimmed_board, is_column):
     else:
         for y in range(8):
             current_number_of_trimmed_positions = 0
+            breaked = False
             for x in range(8):
-                if (x, y) in trimmed_board and trimmed_board[(x, y)] == 'X0':
+
+                #!!!!!!!!!!!!!!
+                if x in [0, 7] and (x, y) in trimmed_board and trimmed_board[(x, y)] == 'X0':
+                    breaked = True
+                    break
+
+                elif (x, y) in trimmed_board and trimmed_board[(x, y)] == 'X0':
                     current_number_of_trimmed_positions += 1
 
-            if current_number_of_trimmed_positions < min_number_of_trimmed_positions:
+            if current_number_of_trimmed_positions < min_number_of_trimmed_positions and not breaked:
                 line_number = x
                 min_number_of_trimmed_positions = current_number_of_trimmed_positions
         
