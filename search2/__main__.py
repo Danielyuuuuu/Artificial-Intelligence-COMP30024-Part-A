@@ -2,46 +2,67 @@ import sys
 import json
 import copy
 import time
+from search2.trimBoard import  trim_board
 from search.util import print_move, print_boom, print_board
+
+trim_board_dict = {}
 
 
 class BoardNode:
     current_board_dict = {}
+    mark_dict = {}
     history_behaviors = []
     potential_behaviors = []
     next_nodes = []
 
-    def __init__(self, board_dict, history):
+    def __init__(self, board_dict, history, behavior, mark_dict):
         self.current_board_dict = board_dict
-        self.potential_behaviors = find_potential_behaviors(board_dict)
+        self.mark_dict = mark_dict
+
         if not history:
-            self.history_behaviors.append(board_dict)
+            self.history_behaviors = behavior
         else:
             self.history_behaviors = copy.deepcopy(history)
-            self.history_behaviors.append(board_dict)
+            self.history_behaviors.append(behavior)
+        self.potential_behaviors = find_potential_behaviors(board_dict, mark_dict, self.history_behaviors)
 
     def stimulate_step(self):
         self.next_nodes = []
         for behavior in self.potential_behaviors:
-            tmp_node = BoardNode(stimulate_behavior(self.current_board_dict, behavior), self.history_behaviors)
+            tmp_node = BoardNode(stimulate_behavior(self.current_board_dict, behavior),
+                                 self.history_behaviors, behavior, self.mark_dict)
             self.next_nodes.append(tmp_node)
 
 
-def find_potential_behaviors(board_dict):
+def find_potential_behaviors(board_dict, mark_dict, history_behaviors):
 
     # should have format [[behavior_type, original_position, potential_ways], ....]
     potential_behaviors = []
+
+    global trim_board_dict
     for position in board_dict:
         if board_dict[position][0] == "B":
             continue
-        potential_behaviors.append(["boom", position])
+        if position in mark_dict:
+            potential_behaviors.append(["boom", position])
+
         for potential_way in potential_ways(board_dict, position):
+            #print(position, potential_way)
+            if history_behaviors and \
+                    history_behaviors[-1] == ["move", potential_way[0], position, potential_way[1]]:
+                continue
+            if potential_way[0] in trim_board_dict:
+                # print("potential_way[0]", potential_way[0])
+                # print("potential_way[0]", trim_board_dict[potential_way[0]])
+                # print("was remove! potential behaviors:", position, potential_way)
+                continue
             potential_behaviors.append(["move", position, potential_way[0], potential_way[1]])
+
     return potential_behaviors
 
 
 def stimulate_behavior(board_dict, behavior):
-    new_board_dict = copy.deepcopy(board_dict)
+    new_board_dict = copy.copy(board_dict)
     if behavior[0] == "boom":
         boom(new_board_dict, behavior[1])
     else:
@@ -124,11 +145,14 @@ def cal_mark(board_dict):
     for x in range(8):
         for y in range(8):
             if (x, y) in black_dict:
-                mark_dict[(x, y)]= 0
                 continue
+
             tmp_board = copy.deepcopy(black_dict)
             boom(tmp_board, (x, y))
-            mark_dict[(x, y)] = compare_boom(black_dict, tmp_board)
+            tmp_mark = compare_boom(black_dict, tmp_board)
+            if tmp_mark:
+                mark_dict[(x, y)] = tmp_mark
+
     return mark_dict
 
 
@@ -194,25 +218,21 @@ def move_stack(board_dict, initial_pos, final_pos, num_go):
 def BFS(board_tree):
 
     time_start = time.time()
-
-
-
     node_list = [board_tree]
-
     history_dict = []
 
     a = 0
 
     for turn in range(240):
         node_list_next = []
-        print("length of checking list:", len(node_list))
+        # print("\n\n\n\n\n\n\nTurns:  ", turn, "        length of checking list:  ", len(node_list))
         for node_list_index in range(0, len(node_list)):
             tmp_node = node_list[node_list_index]
             if not check_black_exist(tmp_node.current_board_dict):
                 print("win!!!!!!!!!")
-                print_board(tmp_node.history_behaviors[-2])
                 time_end = time.time()
-                print('time cost', time_end - time_start, 's')
+                print('inner time cost', time_end - time_start, 's')
+                print(tmp_node.history_behaviors)
                 return "Win!!!!!!!!!!!!!!!!!"
             if tmp_node.current_board_dict in history_dict:
                 continue
@@ -227,30 +247,38 @@ def BFS(board_tree):
 
         node_list = []
         for node_index in range(0, len(node_list_next)):
-            time_start = time.time()
+            # print_board(node_list_next[node_index].current_board_dict)
+            # time_start = time.time()
             node_list_next[node_index].stimulate_step()
+            # print("potential_behaviors: ", node_list_next[node_index].potential_behaviors)
             time_end = time.time()
-            print('stimulate_step time cost', time_end - time_start, 's')
+            # print('stimulate_step time cost', time_end - time_start, 's')
             stimulate_node = node_list_next[node_index].next_nodes
             node_list += stimulate_node
 
+
 def main():
+
     with open(sys.argv[1]) as file:
         data = json.load(file)
 
     # TODO: find and print winning action sequence
     board_dict = initial_board(data)
     mark_dict = cal_mark(board_dict)
+    global trim_board_dict
+    trim_board_dict = trim_board(board_dict)
 
     # print_board(mark_dict)
     print_board(board_dict, "initial")
+    print_board(mark_dict, "initial_mark")
+    print_board(trim_board_dict, "initial_trim")
 
-    board_tree = BoardNode(board_dict, [])
+    board_tree = BoardNode(board_dict, [], [], mark_dict)
 
     time_start = time.time()
     history = BFS(board_tree)
     time_end = time.time()
-    print('time cost', time_end - time_start, 's')
+    print('BFS time cost', time_end - time_start, 's')
 
     return history
 

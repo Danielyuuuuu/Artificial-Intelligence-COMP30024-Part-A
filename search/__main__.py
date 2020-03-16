@@ -400,7 +400,7 @@ def check_any_stack_arround(board_dict, current_pos):
 
 # Check if there is any stack in a given position
 def check_position_has_stack(board_dict, position, check_white_stack):
-    if (0 <= position[0] < 8 and 0 <=  position[1] < 8):
+    if 0 <= position[0] < 8 and 0 <=  position[1] < 8:
         if check_white_stack:
             if position in board_dict:
                 if board_dict[position][0] == 'W':
