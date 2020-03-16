@@ -43,6 +43,19 @@ class BoardNode:
             self.next_nodes.append(tmp_node)
 
 
+def check_direction(board_dict, behavior):
+    for position in board_dict:
+        if board_dict[position][0] == "B":
+            if square_distance(position, behavior[1]) - square_distance(position, behavior[2]) > 0:
+
+                return True
+    return False
+
+
+def square_distance(p1, p2):
+    return (p1[0]-p2[0])**2 - (p1[1]-p2[1])**2
+
+
 def find_potential_behaviors(board_dict, mark_dict, history_behaviors):
 
     # should have format [[behavior_type, original_position, potential_ways], ....]
