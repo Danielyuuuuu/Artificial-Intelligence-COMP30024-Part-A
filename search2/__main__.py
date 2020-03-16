@@ -226,11 +226,8 @@ def move_stack(board_dict, initial_pos, final_pos, num_go):
 
 def BFS(board_tree):
 
-    time_start = time.time()
     node_list = [board_tree]
     # history_dict = []
-
-    a = 0
 
     for turn in range(240):
         node_list_next = []
@@ -238,17 +235,13 @@ def BFS(board_tree):
         for node_list_index in range(0, len(node_list)):
             tmp_node = node_list[node_list_index]
             if not check_black_exist(tmp_node.current_board_dict):
-                print("win!!!!!!!!!")
-                time_end = time.time()
-                print('inner time cost', time_end - time_start, 's')
-                print(tmp_node.history_behaviors)
-                return "Win!!!!!!!!!!!!!!!!!"
+
+                return tmp_node.history_behaviors
             # if tmp_node.current_board_dict in history_dict:
             #     continue
             # print("Turns: ",turn)
             # print(node_list_index)
-            a += 1
-            # print("a :",a)
+
             # print(len(node_list))
 
             node_list_next.append(tmp_node)
@@ -264,6 +257,15 @@ def BFS(board_tree):
             # print('stimulate_step time cost', time_end - time_start, 's')
             stimulate_node = node_list_next[node_index].next_nodes
             node_list += stimulate_node
+
+
+def print_history_behaviors(history_behaviors_list):
+    for behavior in history_behaviors_list:
+        if behavior:
+            if behavior[0] == "boom":
+                print_boom(behavior[1][0], behavior[1][1])
+            else:
+                print_move(behavior[3], behavior[1][0], behavior[1][1], behavior[2][0], behavior[2][1])
 
 
 def main():
@@ -288,7 +290,7 @@ def main():
     history = BFS(board_tree)
     time_end = time.time()
     print('BFS time cost', time_end - time_start, 's')
-
+    print_history_behaviors(history)
     return history
 
 
