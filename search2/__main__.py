@@ -23,7 +23,7 @@ class BoardNode:
         if not history:
             self.history_behaviors += [behavior]
         else:
-            self.history_behaviors = copy.deepcopy(history)
+            self.history_behaviors = copy.copy(history)
             self.history_behaviors.append(behavior)
         self.potential_behaviors = find_potential_behaviors(board_dict, mark_dict, self.history_behaviors)
 
@@ -145,7 +145,7 @@ def cal_mark(board_dict):
     if a white boom on (1,1), it will destroy 2 stacks of black.
     """
     mark_dict = {}
-    black_dict = copy.deepcopy(board_dict)
+    black_dict = copy.copy(board_dict)
 
     for key in list(black_dict.keys()):
         if black_dict[key][0] == "W":
@@ -156,7 +156,7 @@ def cal_mark(board_dict):
             if (x, y) in black_dict:
                 continue
 
-            tmp_board = copy.deepcopy(black_dict)
+            tmp_board = copy.copy(black_dict)
             boom(tmp_board, (x, y))
             tmp_mark = compare_boom(black_dict, tmp_board)
             if tmp_mark:
