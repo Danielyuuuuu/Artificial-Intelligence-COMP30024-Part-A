@@ -6,6 +6,7 @@ from search2.trimBoard import  trim_board
 from search.util import print_move, print_boom, print_board
 
 trim_board_dict = {}
+history_board_list = []
 
 
 class BoardNode:
@@ -20,16 +21,24 @@ class BoardNode:
         self.mark_dict = mark_dict
 
         if not history:
-            self.history_behaviors = [behavior]
+            self.history_behaviors += [behavior]
         else:
             self.history_behaviors = copy.deepcopy(history)
             self.history_behaviors.append(behavior)
         self.potential_behaviors = find_potential_behaviors(board_dict, mark_dict, self.history_behaviors)
 
     def stimulate_step(self):
+
         self.next_nodes = []
+        global history_board_list
+
         for behavior in self.potential_behaviors:
-            tmp_node = BoardNode(stimulate_behavior(self.current_board_dict, behavior),
+            tmp_board_dict = stimulate_behavior(self.current_board_dict, behavior)
+            if tmp_board_dict in history_board_list:
+                continue
+            history_board_list.append(tmp_board_dict)
+
+            tmp_node = BoardNode(tmp_board_dict,
                                  self.history_behaviors, behavior, self.mark_dict)
             self.next_nodes.append(tmp_node)
 
@@ -67,13 +76,13 @@ def stimulate_behavior(board_dict, behavior):
         boom(new_board_dict, behavior[1])
     else:
         move_stack(new_board_dict, behavior[1], behavior[2], behavior[3])
+
     return new_board_dict
 
 
 def boom(board_dict, start_p):
     """
     This function will find the board status after boom at the start stack position (x, y)
-
     Arguments:
     board_dict -- A dictionary with (x, y) tuples as keys (x, y in range(8))
         and printable objects (e.g. strings, numbers) as values. This function
@@ -219,7 +228,7 @@ def BFS(board_tree):
 
     time_start = time.time()
     node_list = [board_tree]
-    history_dict = []
+    # history_dict = []
 
     a = 0
 
@@ -234,16 +243,16 @@ def BFS(board_tree):
                 print('inner time cost', time_end - time_start, 's')
                 print(tmp_node.history_behaviors)
                 return "Win!!!!!!!!!!!!!!!!!"
-            if tmp_node.current_board_dict in history_dict:
-                continue
-            #print("Turns: ",turn)
-            #print(node_list_index)
+            # if tmp_node.current_board_dict in history_dict:
+            #     continue
+            # print("Turns: ",turn)
+            # print(node_list_index)
             a += 1
-            #print("a :",a)
-            #print(len(node_list))
+            # print("a :",a)
+            # print(len(node_list))
 
             node_list_next.append(tmp_node)
-            history_dict.append(tmp_node.current_board_dict)
+            # history_dict.append(tmp_node.current_board_dict)
 
         node_list = []
         for node_index in range(0, len(node_list_next)):
@@ -268,10 +277,10 @@ def main():
     global trim_board_dict
     trim_board_dict = trim_board(board_dict)
 
-    # print_board(mark_dict)
-    print_board(board_dict, "initial")
-    print_board(mark_dict, "initial_mark")
-    print_board(trim_board_dict, "initial_trim")
+
+    # print_board(board_dict, "initial")
+    # print_board(mark_dict, "initial_mark")
+    # print_board(trim_board_dict, "initial_trim")
 
     board_tree = BoardNode(board_dict, [], [], mark_dict)
 
