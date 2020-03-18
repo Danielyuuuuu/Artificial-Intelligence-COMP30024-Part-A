@@ -293,7 +293,7 @@ def main():
     trim_board_dict = trim_board(board_dict)
 
 
-    # print_board(board_dict, "initial")
+    print_board(board_dict, "initial")
     # print_board(mark_dict, "initial_mark")
     # print_board(trim_board_dict, "initial_trim")
 
