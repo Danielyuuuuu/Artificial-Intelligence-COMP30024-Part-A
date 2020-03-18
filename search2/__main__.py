@@ -307,7 +307,7 @@ def BFS(board_tree):
                     if not accidental_injury(node_list_next[node_index].current_board_dict, behavior):
 
                         # print_board(node_list_next[node_index].current_board_dict)
-                        print(behavior)
+                        # print(behavior)
                         node_list_next[node_index].potential_behaviors = [behavior]
                         break_value = True
                         node_list = []
@@ -336,14 +336,24 @@ def print_history_behaviors(history_behaviors_list):
                 print_move(behavior[3], behavior[1][0], behavior[1][1], behavior[2][0], behavior[2][1])
 
 
-def main():
+def main(file_path):
 
-    with open(sys.argv[1]) as file:
+    # with open(sys.argv[1]) as file:
+    #     data = json.load(file)
+    with open(file_path) as file:
         data = json.load(file)
+    print("Test case path:     ", file_path)
 
     # TODO: find and print winning action sequence
     global mark_dict
     global trim_board_dict
+    global history_board_list
+    global highest_mark_positions
+
+    mark_dict = {}
+    trim_board_dict = {}
+    history_board_list = []
+    highest_mark_positions = {}
 
     time_start = time.time()
     board_dict = initial_board(data)
@@ -351,20 +361,32 @@ def main():
 
     trim_board_dict = trim_board(board_dict)
 
-    print_board(board_dict, "initial")
-    print_board(mark_dict, "initial_mark")
-    print_board(trim_board_dict, "initial_trim")
+    # print_board(board_dict, "initial")
+    # print_board(mark_dict, "initial_mark")
+    # print_board(trim_board_dict, "initial_trim")
     get_highest_mark_positions()
 
     board_tree = BoardNode(board_dict, [], [])
 
     history = BFS(board_tree)
     time_end = time.time()
-    print('BFS time cost', time_end - time_start, 's')
+    print('Search time cost', time_end - time_start, 's')
     print_history_behaviors(history)
+    print("")
     return history
 
 
 if __name__ == '__main__':
-    main()
+
+    main("2020-part-a-test-cases/test-level-1.json")
+    main("2020-part-a-test-cases/test-level-2.json")
+    main("2020-part-a-test-cases/test-level-3.json")
+    main("2020-part-a-test-cases/test-level-4.json")
+    main("2020-part-a-test-cases/test-level-5.json")
+    main("2020-part-a-test-cases/test-level-6.json")
+    main("2020-part-a-test-cases/test-level-7.json")
+    main("2020-part-a-test-cases/test-level-8.json")
+    main("2020-part-a-test-cases/test-level-9.json")
+    main("2020-part-a-test-cases/test-level-10.json")
+
 
