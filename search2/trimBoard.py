@@ -78,7 +78,20 @@ def trim_board(board_dict):
                 continue_to_trim = False
                 break
 
+
+    # Trim the four borders of the board
+    for x in range(8):
+        for y in range(8):
+            if (x, y) not in board_dict:
+                if x in [0, 7] or y in [0, 7]:
+                    if not check_any_stack_arround(board_dict, (x, y)):
+                        trimmed_board[(x, y)] = 'X0'
+                else:
+                    continue
+
+
     trimmed_board = delete_trim_if_it_make_the_board_disconnected(trimmed_board)
+    
     
     return trimmed_board
 
