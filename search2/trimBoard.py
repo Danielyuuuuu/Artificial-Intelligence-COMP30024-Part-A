@@ -21,6 +21,7 @@ def trim_board(board_dict):
                 else:
                     break
             else:
+                continue_to_trim = False
                 break
     
     # Trim top right of the board
@@ -56,6 +57,7 @@ def trim_board(board_dict):
                 else:
                     break
             else:
+                continue_to_trim = False
                 break
 
     # Trim bottom right of the 
@@ -73,6 +75,7 @@ def trim_board(board_dict):
                 else:
                     break
             else:
+                continue_to_trim = False
                 break
 
     trimmed_board = delete_trim_if_it_make_the_board_disconnected(trimmed_board)
