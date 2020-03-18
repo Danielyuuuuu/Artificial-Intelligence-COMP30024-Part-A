@@ -213,7 +213,7 @@ def trim_board(board_dict):
 
         for x in range(4):
             if (x, y) not in board_dict:
-                if not check_any_stack_arround(board_dict, (x, y)):
+                if not check_any_stack_arround(board_dict, (x, y), trimmed_board, False):
                     trimmed_board[(x, y)] = 'X0'
                     
                 else:
@@ -231,7 +231,7 @@ def trim_board(board_dict):
         
         for x in range(7, 3, -1):
             if (x, y) not in board_dict:
-                if not check_any_stack_arround(board_dict, (x, y)):
+                if not check_any_stack_arround(board_dict, (x, y), trimmed_board, False):
                     trimmed_board[(x, y)] = 'X0'
                     
                 else:
@@ -249,7 +249,7 @@ def trim_board(board_dict):
 
         for x in range(4):
             if (x, y) not in board_dict:
-                if not check_any_stack_arround(board_dict, (x, y)):
+                if not check_any_stack_arround(board_dict, (x, y), trimmed_board, False):
                     trimmed_board[(x, y)] = 'X0'
                     
                 else:
@@ -267,7 +267,7 @@ def trim_board(board_dict):
 
         for x in range(7, 3, -1):
             if (x, y) not in board_dict:
-                if not check_any_stack_arround(board_dict, (x, y)):
+                if not check_any_stack_arround(board_dict, (x, y), trimmed_board, False):
                     trimmed_board[(x, y)] = 'X0'
                     
                 else:
@@ -276,16 +276,19 @@ def trim_board(board_dict):
                 continue_to_trim = False
                 break
 
-    # Trim the four borders of the board
+    # Trim the four borders as well as any possible trimming positions of the board
     for x in range(8):
         for y in range(8):
             if (x, y) not in board_dict:
                 if x in [0, 7] or y in [0, 7]:
-                    if not check_any_stack_arround(board_dict, (x, y)):
+                    if not check_any_stack_arround(board_dict, (x, y), trimmed_board, False):
                         trimmed_board[(x, y)] = 'X0'
+                elif not check_any_stack_arround(board_dict, (x, y), trimmed_board, True):
+                    trimmed_board[(x, y)] = 'X0'
                 else:
                     continue
 
+    
 
 
     trimmed_board = delete_trim_if_it_make_the_board_disconnected(trimmed_board)
@@ -429,7 +432,7 @@ def find_line_that_has_the_least_trimmed_positions(trimmed_board, is_column):
                     
 
 # Check if there is any stack around the potential trimming position
-def check_any_stack_arround(board_dict, current_pos):
+def check_any_stack_arround(board_dict, current_pos, trimmed_board, check_trimmed_pos):
     right = (current_pos[0] + 1, current_pos[1])
     left = (current_pos[0] - 1, current_pos[1])
     up = (current_pos[0], current_pos[1] + 1)
@@ -443,35 +446,35 @@ def check_any_stack_arround(board_dict, current_pos):
     down_left = (current_pos[0] -1, current_pos[1] - 1)
     down_right = (current_pos[0] + 1, current_pos[1] - 1)
 
-    if check_position_has_stack(board_dict, right, False):
+    if check_position_has_stack(board_dict, right, False, trimmed_board, check_trimmed_pos):
         return True
-    elif check_position_has_stack(board_dict, left, False):
+    elif check_position_has_stack(board_dict, left, False, trimmed_board, check_trimmed_pos):
         return True
-    elif check_position_has_stack(board_dict, up, False):
+    elif check_position_has_stack(board_dict, up, False, trimmed_board, check_trimmed_pos):
         return True
-    elif check_position_has_stack(board_dict, down, False):
+    elif check_position_has_stack(board_dict, down, False, trimmed_board, check_trimmed_pos):
         return True
-    elif check_position_has_stack(board_dict, right_right, True):
+    elif check_position_has_stack(board_dict, right_right, True, trimmed_board, check_trimmed_pos):
         return True
-    elif check_position_has_stack(board_dict, left_left, True):
+    elif check_position_has_stack(board_dict, left_left, True, trimmed_board, check_trimmed_pos):
         return True
-    elif check_position_has_stack(board_dict, up_up, True):
+    elif check_position_has_stack(board_dict, up_up, True, trimmed_board, check_trimmed_pos):
         return True
-    elif check_position_has_stack(board_dict, down_down, True):
+    elif check_position_has_stack(board_dict, down_down, True, trimmed_board, check_trimmed_pos):
         return True
-    elif check_position_has_stack(board_dict, up_left, False):
+    elif check_position_has_stack(board_dict, up_left, False, trimmed_board, check_trimmed_pos):
         return True
-    elif check_position_has_stack(board_dict, up_right, False):
+    elif check_position_has_stack(board_dict, up_right, False, trimmed_board, check_trimmed_pos):
         return True
-    elif check_position_has_stack(board_dict, down_left, False):
+    elif check_position_has_stack(board_dict, down_left, False, trimmed_board, check_trimmed_pos):
         return True
-    elif check_position_has_stack(board_dict, down_right, False):
+    elif check_position_has_stack(board_dict, down_right, False, trimmed_board, check_trimmed_pos):
         return True
     return False
 
 
 # Check if there is any stack in a given position
-def check_position_has_stack(board_dict, position, check_white_stack):
+def check_position_has_stack(board_dict, position, check_white_stack, trimmed_board, check_trimmed_pos):
     if 0 <= position[0] < 8 and 0 <=  position[1] < 8:
         if check_white_stack:
             if position in board_dict:
@@ -479,6 +482,8 @@ def check_position_has_stack(board_dict, position, check_white_stack):
                     return True
         else: 
             if position in board_dict:
+                return True
+            elif check_trimmed_pos and position in trimmed_board:
                 return True
     return False    
 
