@@ -6,7 +6,9 @@ from search2.trimBoard import  trim_board
 from search.util import print_move, print_boom, print_board
 
 trim_board_dict = {}
+mark_dict = {}
 history_board_list = []
+highest_mark_positions = {}
 
 
 class BoardNode:
@@ -16,16 +18,15 @@ class BoardNode:
     potential_behaviors = []
     next_nodes = []
 
-    def __init__(self, board_dict, history, behavior, mark_dict):
+    def __init__(self, board_dict, history, behavior):
         self.current_board_dict = board_dict
-        self.mark_dict = mark_dict
 
         if not history:
             self.history_behaviors += [behavior]
         else:
             self.history_behaviors = copy.copy(history)
             self.history_behaviors.append(behavior)
-        self.potential_behaviors = find_potential_behaviors(board_dict, mark_dict, self.history_behaviors)
+        self.potential_behaviors = find_potential_behaviors(board_dict, self.history_behaviors)
 
     def stimulate_step(self):
 
@@ -39,7 +40,7 @@ class BoardNode:
             history_board_list.append(tmp_board_dict)
 
             tmp_node = BoardNode(tmp_board_dict,
-                                 self.history_behaviors, behavior, self.mark_dict)
+                                 self.history_behaviors, behavior)
             self.next_nodes.append(tmp_node)
 
 
@@ -56,12 +57,13 @@ def square_distance(p1, p2):
     return (p1[0]-p2[0])**2 - (p1[1]-p2[1])**2
 
 
-def find_potential_behaviors(board_dict, mark_dict, history_behaviors):
+def find_potential_behaviors(board_dict, history_behaviors):
 
     # should have format [[behavior_type, original_position, potential_ways], ....]
     potential_behaviors = []
-
+    global mark_dict
     global trim_board_dict
+
     for position in board_dict:
         if board_dict[position][0] == "B":
             continue
@@ -157,7 +159,9 @@ def cal_mark(board_dict):
     Calculate the mark for each position on the board that can boom. For a position (1,1) has mark 2, meaning that
     if a white boom on (1,1), it will destroy 2 stacks of black.
     """
+    global mark_dict
     mark_dict = {}
+
     black_dict = copy.copy(board_dict)
 
     for key in list(black_dict.keys()):
@@ -237,9 +241,41 @@ def move_stack(board_dict, initial_pos, final_pos, num_go):
         board_dict[initial_pos] = "W" + str(num_init)
 
 
+def get_highest_mark_positions():
+    global mark_dict
+    global highest_mark_positions
+
+    highest_mark_positions = {}
+    max_num = 0
+    for position in mark_dict:
+        if mark_dict[position] >= max_num:
+            max_num = mark_dict[position]
+    for position in mark_dict:
+        if mark_dict[position] == max_num:
+            highest_mark_positions[position] = max_num
+    return highest_mark_positions
+
+
+def accidental_injury(board_dict, behavior):
+    global mark_dict
+    total_stack = len(board_dict)
+    total_stack_after = len(stimulate_behavior(board_dict, behavior))
+    # print("\n\n\n\ntotal stack", total_stack)
+    # print("after", total_stack_after)
+    # print("mark dict", mark_dict[behavior[1]])
+    if int(board_dict[behavior[1]][1]) == 1:
+        if total_stack - total_stack_after == mark_dict[behavior[1]] + 1:
+            return False
+
+    return True
+
+
 def BFS(board_tree):
 
     node_list = [board_tree]
+    global highest_mark_positions
+    global mark_dict
+    global trim_board_dict
     # history_dict = []
 
     for turn in range(240):
@@ -248,8 +284,8 @@ def BFS(board_tree):
         for node_list_index in range(0, len(node_list)):
             tmp_node = node_list[node_list_index]
             if not check_black_exist(tmp_node.current_board_dict):
-
                 return tmp_node.history_behaviors
+
             # if tmp_node.current_board_dict in history_dict:
             #     continue
             # print("Turns: ",turn)
@@ -261,15 +297,34 @@ def BFS(board_tree):
             # history_dict.append(tmp_node.current_board_dict)
 
         node_list = []
+        break_value = False
         for node_index in range(0, len(node_list_next)):
             # print_board(node_list_next[node_index].current_board_dict)
             # time_start = time.time()
+
+            for behavior in node_list_next[node_index].potential_behaviors:
+                if behavior[0] == "boom" and behavior[1] in highest_mark_positions:
+                    if not accidental_injury(node_list_next[node_index].current_board_dict, behavior):
+
+                        # print_board(node_list_next[node_index].current_board_dict)
+                        print(behavior)
+                        node_list_next[node_index].potential_behaviors = [behavior]
+                        break_value = True
+                        node_list = []
+                        break
+
             node_list_next[node_index].stimulate_step()
             # print("potential_behaviors: ", node_list_next[node_index].potential_behaviors)
-            time_end = time.time()
+            # time_end = time.time()
             # print('stimulate_step time cost', time_end - time_start, 's')
             stimulate_node = node_list_next[node_index].next_nodes
             node_list += stimulate_node
+            if break_value:
+                trim_board_dict = trim_board(node_list[0].current_board_dict)
+                # print_board(trim_board_dict)
+                mark_dict = cal_mark(node_list[0].current_board_dict)
+                highest_mark_positions = get_highest_mark_positions()
+                break
 
 
 def print_history_behaviors(history_behaviors_list):
@@ -287,27 +342,27 @@ def main():
         data = json.load(file)
 
     # TODO: find and print winning action sequence
-    board_dict = initial_board(data)
-    mark_dict = cal_mark(board_dict)
+    global mark_dict
     global trim_board_dict
-    trim_board_dict = trim_board(board_dict)
-
-
-    print_board(board_dict, "initial")
-    # print_board(mark_dict, "initial_mark")
-    # print_board(trim_board_dict, "initial_trim")
-
-    board_tree = BoardNode(board_dict, [], [], mark_dict)
 
     time_start = time.time()
+    board_dict = initial_board(data)
+    mark_dict = cal_mark(board_dict)
+
+    trim_board_dict = trim_board(board_dict)
+
+    print_board(board_dict, "initial")
+    print_board(mark_dict, "initial_mark")
+    print_board(trim_board_dict, "initial_trim")
+    get_highest_mark_positions()
+
+    board_tree = BoardNode(board_dict, [], [])
+
     history = BFS(board_tree)
     time_end = time.time()
     print('BFS time cost', time_end - time_start, 's')
     print_history_behaviors(history)
     return history
-
-
-
 
 
 if __name__ == '__main__':
