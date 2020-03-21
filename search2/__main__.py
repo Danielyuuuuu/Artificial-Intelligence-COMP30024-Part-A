@@ -278,7 +278,7 @@ def BFS(board_tree):
     global trim_board_dict
     # history_dict = []
 
-    for turn in range(240):
+    for turn in range(250):
         node_list_next = []
         # print("\n\n\n\n\n\n\nTurns:  ", turn, "        length of checking list:  ", len(node_list))
         for node_list_index in range(0, len(node_list)):
