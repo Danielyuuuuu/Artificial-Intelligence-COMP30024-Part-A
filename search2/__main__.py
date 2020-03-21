@@ -390,5 +390,5 @@ if __name__ == '__main__':
     main("2020-part-a-test-cases/test-level-9.json")
     main("2020-part-a-test-cases/test-level-10.json")
     main("2020-part-a-test-cases/test-level-11.json")
-
-
+    main("2020-part-a-test-cases/test-level-12.json")
+    main("2020-part-a-test-cases/test-level-13.json")
