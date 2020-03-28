@@ -1,13 +1,103 @@
 import sys
 import json
 import copy
+# import time
+from search.trimBoard import  trim_board
 from search.util import print_move, print_boom, print_board
+
+trim_board_dict = {}
+mark_dict = {}
+history_board_list = []
+highest_mark_positions = {}
+
+
+class BoardNode:
+    current_board_dict = {}
+    mark_dict = {}
+    history_behaviors = []
+    potential_behaviors = []
+    next_nodes = []
+
+    def __init__(self, board_dict, history, behavior):
+        self.current_board_dict = board_dict
+
+        if not history:
+            self.history_behaviors += [behavior]
+        else:
+            self.history_behaviors = copy.copy(history)
+            self.history_behaviors.append(behavior)
+        self.potential_behaviors = find_potential_behaviors(board_dict, self.history_behaviors)
+
+    def stimulate_step(self):
+
+        self.next_nodes = []
+        global history_board_list
+
+        for behavior in self.potential_behaviors:
+            tmp_board_dict = stimulate_behavior(self.current_board_dict, behavior)
+            if tmp_board_dict in history_board_list:
+                continue
+            history_board_list.append(tmp_board_dict)
+
+            tmp_node = BoardNode(tmp_board_dict,
+                                 self.history_behaviors, behavior)
+            self.next_nodes.append(tmp_node)
+
+
+def check_direction(board_dict, behavior):
+    for position in board_dict:
+        if board_dict[position][0] == "B":
+            if square_distance(position, behavior[1]) - square_distance(position, behavior[2]) > 0:
+
+                return True
+    return False
+
+
+def square_distance(p1, p2):
+    return (p1[0]-p2[0])**2 - (p1[1]-p2[1])**2
+
+
+def find_potential_behaviors(board_dict, history_behaviors):
+
+    # should have format [[behavior_type, original_position, potential_ways], ....]
+    potential_behaviors = []
+    global mark_dict
+    global trim_board_dict
+
+    for position in board_dict:
+        if board_dict[position][0] == "B":
+            continue
+        if position in mark_dict:
+            potential_behaviors.append(["boom", position])
+
+        for potential_way in potential_ways(board_dict, position):
+            #print(position, potential_way)
+            if history_behaviors and \
+                    history_behaviors[-1] == ["move", potential_way[0], position, potential_way[1]]:
+                continue
+            if potential_way[0] in trim_board_dict:
+                # print("potential_way[0]", potential_way[0])
+                # print("potential_way[0]", trim_board_dict[potential_way[0]])
+                # print("was remove! potential behaviors:", position, potential_way)
+                continue
+            potential_behaviors.append(["move", position, potential_way[0], potential_way[1]])
+
+    return potential_behaviors
+
+
+def stimulate_behavior(board_dict, behavior):
+    new_board_dict = copy.copy(board_dict)
+    if behavior[0] == "boom":
+        boom(new_board_dict, behavior[1])
+    else:
+        move_stack(new_board_dict, behavior[1], behavior[2], behavior[3])
+
+    return new_board_dict
 
 
 def boom(board_dict, start_p):
     """
     This function will find the board status after boom at the start stack position (x, y)
-
     Arguments:
     board_dict -- A dictionary with (x, y) tuples as keys (x, y in range(8))
         and printable objects (e.g. strings, numbers) as values. This function
@@ -23,7 +113,7 @@ def boom(board_dict, start_p):
             boom(board_dict, stack)
 
 
-def potential_way(board_dict, white_pos):
+def potential_ways(board_dict, white_pos):
     """
     This function is to find all the valid moves for a current white position
     board_dict -- same as before
@@ -69,8 +159,10 @@ def cal_mark(board_dict):
     Calculate the mark for each position on the board that can boom. For a position (1,1) has mark 2, meaning that
     if a white boom on (1,1), it will destroy 2 stacks of black.
     """
+    global mark_dict
     mark_dict = {}
-    black_dict = copy.deepcopy(board_dict)
+
+    black_dict = copy.copy(board_dict)
 
     for key in list(black_dict.keys()):
         if black_dict[key][0] == "W":
@@ -79,11 +171,14 @@ def cal_mark(board_dict):
     for x in range(8):
         for y in range(8):
             if (x, y) in black_dict:
-                mark_dict[(x, y)]= 0
                 continue
-            tmp_board = copy.deepcopy(black_dict)
+
+            tmp_board = copy.copy(black_dict)
             boom(tmp_board, (x, y))
-            mark_dict[(x, y)] = compare_boom(black_dict, tmp_board)
+            tmp_mark = compare_boom(black_dict, tmp_board)
+            if tmp_mark:
+                mark_dict[(x, y)] = tmp_mark
+
     return mark_dict
 
 
@@ -132,379 +227,151 @@ def initial_board(data):
     return board_dict
 
 
-def move_stack(board_dict, initial_pos, final_pos):
-    board_dict[final_pos] = board_dict[initial_pos]
-    board_dict.pop(initial_pos)
+def move_stack(board_dict, initial_pos, final_pos, num_go):
+    if final_pos not in board_dict:
+        board_dict[final_pos] = "W0"
 
+    num_aim = int(board_dict[final_pos][1:]) + num_go
+    num_init = int(board_dict[initial_pos][1:]) - num_go
 
-def dijsktra(original_board_dict, initial_pos, final_pos):
-
-    paths_dict = {initial_pos: (initial_pos, 0)}
-    current_pos = initial_pos
-    visited_pos = set()
-
-    board_dict = copy.deepcopy(original_board_dict)
-    num_of_stack = original_board_dict[initial_pos]
-    board_dict.pop(initial_pos)
-
-    # Keeps iterating until it reaches the final position
-    while current_pos != final_pos:
-        board_dict[current_pos] = num_of_stack
-        visited_pos.add(current_pos)
-
-        potential_moves = potential_way(board_dict, current_pos)
-        
-        if len(potential_moves) != 0:
-            # Try all the potential moves and check which one has the least cost
-            for potential_move in potential_moves:
-                potential_move = potential_move[0]
-                cost = distance_between_positions(current_pos, potential_move) + paths_dict[current_pos][1]
-
-                if potential_move not in paths_dict:
-                    paths_dict[potential_move] = (current_pos, cost)
-                else:
-                    if paths_dict[potential_move][1] > cost:
-                        paths_dict[potential_move] = (current_pos, cost)
-        
-        
-        # To find a position with the least cost
-        min_cost = float('inf')
-        min_position = None
-        for position in paths_dict:
-            if position != paths_dict[position][0] and position not in visited_pos:
-                if paths_dict[position][1] < min_cost:
-                    min_cost = paths_dict[position][1]
-                    min_position = position
-
-        # Check of there is any unexplored position
-        if min_position is None:
-            print("Stack can't be moved to the destination")
-            return
-        else:
-            current_pos = min_position
-
-
-    shortest_path = []
-
-    # Back tracking the shortest path
-    while current_pos is not initial_pos:
-        shortest_path.append(current_pos)
-        previous_pos = paths_dict[current_pos][0]
-        current_pos = previous_pos
-    shortest_path.append(initial_pos)
-    print(shortest_path[::-1])
-
-
-def distance_between_positions(position_one, position_two):
-    return abs(position_one[0] - position_two[0]) + abs(position_one[1] - position_two[1])
-
-
-# To trim the four sides of the board that do not have any stack
-def trim_board(board_dict):
-
-    trimmed_board = {}
-
-    # Trim top left of the board
-    continue_to_trim = True
-    for y in range(7, 3, -1):
-
-        if not continue_to_trim:
-            break
-
-        for x in range(4):
-            if (x, y) not in board_dict:
-                if not check_any_stack_arround(board_dict, (x, y), trimmed_board, False):
-                    trimmed_board[(x, y)] = 'X0'
-                    
-                else:
-                    break
-            else:
-                continue_to_trim = False
-                break
-    
-    # Trim top right of the board
-    continue_to_trim = True
-    for y in range(7, 3, -1):
-
-        if not continue_to_trim:
-            continue
-        
-        for x in range(7, 3, -1):
-            if (x, y) not in board_dict:
-                if not check_any_stack_arround(board_dict, (x, y), trimmed_board, False):
-                    trimmed_board[(x, y)] = 'X0'
-                    
-                else:
-                    break
-            else:
-                continue_to_trim = False
-                break
-
-    # Trim bottom left of the board
-    continue_to_trim = True
-    for y in range(4):
-
-        if not continue_to_trim:
-            break
-
-        for x in range(4):
-            if (x, y) not in board_dict:
-                if not check_any_stack_arround(board_dict, (x, y), trimmed_board, False):
-                    trimmed_board[(x, y)] = 'X0'
-                    
-                else:
-                    break
-            else:
-                continue_to_trim = False
-                break
-
-    # Trim bottom right of the 
-    continue_to_trim = True
-    for y in range(4):
-
-        if not continue_to_trim:
-            break
-
-        for x in range(7, 3, -1):
-            if (x, y) not in board_dict:
-                if not check_any_stack_arround(board_dict, (x, y), trimmed_board, False):
-                    trimmed_board[(x, y)] = 'X0'
-                    
-                else:
-                    break
-            else:
-                continue_to_trim = False
-                break
-
-    # Trim the four borders as well as any possible trimming positions of the board
-    for x in range(8):
-        for y in range(8):
-            if (x, y) not in board_dict:
-                if x in [0, 7] or y in [0, 7]:
-                    if not check_any_stack_arround(board_dict, (x, y), trimmed_board, False):
-                        trimmed_board[(x, y)] = 'X0'
-                elif not check_any_stack_arround(board_dict, (x, y), trimmed_board, True):
-                    trimmed_board[(x, y)] = 'X0'
-                else:
-                    continue
-
-    
-
-
-    trimmed_board = delete_trim_if_it_make_the_board_disconnected(trimmed_board)
-    
-    return trimmed_board
-        
-
-""" 
-To make sure that the trimmed board is not disconnected, and does not
-trap any stacks in the corner
-"""
-def delete_trim_if_it_make_the_board_disconnected(trimmed_board):
-
-    rows_that_have_been_cut_entirely = []
-    # Check from bottom up
-    for y in range(8):
-        row_has_been_cut_entirely = True
-        for x in range(8):
-            if (((x, y) in trimmed_board) and trimmed_board[(x, y)] != 'X0') or (x, y) not in trimmed_board:
-                row_has_been_cut_entirely = False
-                break
-        if row_has_been_cut_entirely:
-            rows_that_have_been_cut_entirely.append(y)
-
-
-    columns_that_have_been_cut_entirely = []
-
-    # Check from left to right
-    for x in range(8):
-        column_has_been_cut_entirely = True
-        for y in range(8):
-            if (((x, y) in trimmed_board) and trimmed_board[(x, y)] != 'X0') or (x, y) not in trimmed_board:
-                column_has_been_cut_entirely = False
-                break
-        if column_has_been_cut_entirely:
-            columns_that_have_been_cut_entirely.append(x)
-
-    
-    rows_that_have_been_cut_entirely = lines_that_separate_the_board(rows_that_have_been_cut_entirely)
-    columns_that_have_been_cut_entirely = lines_that_separate_the_board(columns_that_have_been_cut_entirely)
-    
-    print(rows_that_have_been_cut_entirely)
-    print(columns_that_have_been_cut_entirely)
-    print_board(trimmed_board)
-    
-    # Delete the trimmed position that has disconnected the board
-    if len(rows_that_have_been_cut_entirely) != 0:
-        line = find_line_that_has_the_least_trimmed_positions(trimmed_board, True)
-        for y in range(8):
-            if ((line, y) in trimmed_board) and trimmed_board[(line, y)] == 'X0':
-                del trimmed_board[(line, y)]
-
-    if len(columns_that_have_been_cut_entirely) != 0:
-        line = find_line_that_has_the_least_trimmed_positions(trimmed_board, False)
-        for x in range(8):
-            if ((x, line) in trimmed_board) and trimmed_board[(x, line)] == 'X0':
-                del trimmed_board[(x, line)]
-
-    
-    for x in range(7):
-        for y in range(7):
-            pos_down_left = (x, y)
-            pos_down_right = (x + 1, y)
-            pos_up_left = (x, y + 1)
-            pos_up_right = (x + 1, y + 1)
-
-            if pos_down_left in trimmed_board and pos_up_right in trimmed_board:
-                if trimmed_board[pos_down_left] == "X0" and trimmed_board[pos_up_right] == "X0":
-                    if pos_down_right not in trimmed_board and pos_up_left not in trimmed_board:
-                        del trimmed_board[pos_down_left]
-                        del trimmed_board[pos_up_right]
-            
-            elif pos_down_right in trimmed_board and pos_up_left in trimmed_board:
-                if trimmed_board[pos_down_right] == "X0" and trimmed_board[pos_up_left] == "X0":
-                    if pos_down_left not in trimmed_board and pos_up_right not in trimmed_board:
-                        del trimmed_board[pos_down_right]
-                        del trimmed_board[pos_up_left]
-
-
-    return trimmed_board
-   
-
-# Find the row or colomn that has disconnected the board
-def lines_that_separate_the_board(lines_that_have_been_cut_entirely):
-    if len(lines_that_have_been_cut_entirely) != 0:
-        for i in range(8):
-            if i in lines_that_have_been_cut_entirely:
-                lines_that_have_been_cut_entirely.remove(i)
-            else:
-                break
-        for i in range(7, -1, -1):
-            if i in lines_that_have_been_cut_entirely:
-                lines_that_have_been_cut_entirely.remove(i)
-            else:
-                break
-    return lines_that_have_been_cut_entirely
-        
-
-# Fine the row or column that has the least trimmed positions
-def find_line_that_has_the_least_trimmed_positions(trimmed_board, is_column):
-    
-    line_number = None
-    min_number_of_trimmed_positions = 9
-    if is_column:
-        for x in range(8):
-            current_number_of_trimmed_positions = 0
-            breaked = False
-            for y in range(8):
-
-                #!!!!!!!!!!!!!
-                if y in [0, 7] and (x, y) in trimmed_board and trimmed_board[(x, y)] == 'X0':
-                
-                    breaked = True
-                    break
-                elif (x, y) in trimmed_board and trimmed_board[(x, y)] == 'X0':
-                    current_number_of_trimmed_positions += 1
-            if current_number_of_trimmed_positions < min_number_of_trimmed_positions and not breaked:
-                line_number = x
-                min_number_of_trimmed_positions = current_number_of_trimmed_positions
-                
-        
+    board_dict[final_pos] = "W" + str(num_aim)
+    if num_init == 0:
+        board_dict.pop(initial_pos)
     else:
-        for y in range(8):
-            current_number_of_trimmed_positions = 0
-            breaked = False
-            for x in range(8):
-
-                #!!!!!!!!!!!!!!
-                if x in [0, 7] and (x, y) in trimmed_board and trimmed_board[(x, y)] == 'X0':
-                    breaked = True
-                    break
-
-                elif (x, y) in trimmed_board and trimmed_board[(x, y)] == 'X0':
-                    current_number_of_trimmed_positions += 1
-
-            if current_number_of_trimmed_positions < min_number_of_trimmed_positions and not breaked:
-                line_number = x
-                min_number_of_trimmed_positions = current_number_of_trimmed_positions
-        
-    return line_number            
-                    
-
-# Check if there is any stack around the potential trimming position
-def check_any_stack_arround(board_dict, current_pos, trimmed_board, check_trimmed_pos):
-    right = (current_pos[0] + 1, current_pos[1])
-    left = (current_pos[0] - 1, current_pos[1])
-    up = (current_pos[0], current_pos[1] + 1)
-    down = (current_pos[0], current_pos[1] - 1)
-    right_right = (current_pos[0] + 2, current_pos[1])
-    left_left = (current_pos[0] - 2, current_pos[1])
-    up_up = (current_pos[0], current_pos[1] + 2)
-    down_down = (current_pos[0], current_pos[1] - 2)
-    up_left = (current_pos[0] - 1, current_pos[1] + 1)
-    up_right = (current_pos[0] + 1, current_pos[1] + 1)
-    down_left = (current_pos[0] -1, current_pos[1] - 1)
-    down_right = (current_pos[0] + 1, current_pos[1] - 1)
-
-    if check_position_has_stack(board_dict, right, False, trimmed_board, check_trimmed_pos):
-        return True
-    elif check_position_has_stack(board_dict, left, False, trimmed_board, check_trimmed_pos):
-        return True
-    elif check_position_has_stack(board_dict, up, False, trimmed_board, check_trimmed_pos):
-        return True
-    elif check_position_has_stack(board_dict, down, False, trimmed_board, check_trimmed_pos):
-        return True
-    elif check_position_has_stack(board_dict, right_right, True, trimmed_board, check_trimmed_pos):
-        return True
-    elif check_position_has_stack(board_dict, left_left, True, trimmed_board, check_trimmed_pos):
-        return True
-    elif check_position_has_stack(board_dict, up_up, True, trimmed_board, check_trimmed_pos):
-        return True
-    elif check_position_has_stack(board_dict, down_down, True, trimmed_board, check_trimmed_pos):
-        return True
-    elif check_position_has_stack(board_dict, up_left, False, trimmed_board, check_trimmed_pos):
-        return True
-    elif check_position_has_stack(board_dict, up_right, False, trimmed_board, check_trimmed_pos):
-        return True
-    elif check_position_has_stack(board_dict, down_left, False, trimmed_board, check_trimmed_pos):
-        return True
-    elif check_position_has_stack(board_dict, down_right, False, trimmed_board, check_trimmed_pos):
-        return True
-    return False
+        board_dict[initial_pos] = "W" + str(num_init)
 
 
-# Check if there is any stack in a given position
-def check_position_has_stack(board_dict, position, check_white_stack, trimmed_board, check_trimmed_pos):
-    if 0 <= position[0] < 8 and 0 <=  position[1] < 8:
-        if check_white_stack:
-            if position in board_dict:
-                if board_dict[position][0] == 'W':
-                    return True
-        else: 
-            if position in board_dict:
-                return True
-            elif check_trimmed_pos and position in trimmed_board:
-                return True
-    return False    
+def get_highest_mark_positions():
+    global mark_dict
+    global highest_mark_positions
+
+    highest_mark_positions = {}
+    max_num = 0
+    for position in mark_dict:
+        if mark_dict[position] >= max_num:
+            max_num = mark_dict[position]
+    for position in mark_dict:
+        if mark_dict[position] == max_num:
+            highest_mark_positions[position] = max_num
+    return highest_mark_positions
+
+
+def accidental_injury(board_dict, behavior):
+    global mark_dict
+    total_stack = len(board_dict)
+    total_stack_after = len(stimulate_behavior(board_dict, behavior))
+    # print("\n\n\n\ntotal stack", total_stack)
+    # print("after", total_stack_after)
+    # print("mark dict", mark_dict[behavior[1]])
+    if int(board_dict[behavior[1]][1]) == 1:
+        if total_stack - total_stack_after == mark_dict[behavior[1]] + 1:
+            return False
+
+    return True
+
+
+def BFS(board_tree):
+
+    node_list = [board_tree]
+    global highest_mark_positions
+    global mark_dict
+    global trim_board_dict
+    # history_dict = []
+
+    for turn in range(250):
+        node_list_next = []
+        # print("\n\n\n\n\n\n\nTurns:  ", turn, "        length of checking list:  ", len(node_list))
+        for node_list_index in range(0, len(node_list)):
+            tmp_node = node_list[node_list_index]
+            if not check_black_exist(tmp_node.current_board_dict):
+                return tmp_node.history_behaviors
+
+            # if tmp_node.current_board_dict in history_dict:
+            #     continue
+            # print("Turns: ",turn)
+            # print(node_list_index)
+
+            # print(len(node_list))
+
+            node_list_next.append(tmp_node)
+            # history_dict.append(tmp_node.current_board_dict)
+
+        node_list = []
+        break_value = False
+        for node_index in range(0, len(node_list_next)):
+            # print_board(node_list_next[node_index].current_board_dict)
+            # time_start = time.time()
+
+            for behavior in node_list_next[node_index].potential_behaviors:
+                if behavior[0] == "boom" and behavior[1] in highest_mark_positions:
+                    if not accidental_injury(node_list_next[node_index].current_board_dict, behavior):
+
+                        # print_board(node_list_next[node_index].current_board_dict)
+                        # print(behavior)
+                        node_list_next[node_index].potential_behaviors = [behavior]
+                        break_value = True
+                        node_list = []
+                        break
+
+            node_list_next[node_index].stimulate_step()
+            # print("potential_behaviors: ", node_list_next[node_index].potential_behaviors)
+            # time_end = time.time()
+            # print('stimulate_step time cost', time_end - time_start, 's')
+            stimulate_node = node_list_next[node_index].next_nodes
+            node_list += stimulate_node
+            if break_value:
+                trim_board_dict = trim_board(node_list[0].current_board_dict)
+                # print_board(trim_board_dict)
+                mark_dict = cal_mark(node_list[0].current_board_dict)
+                highest_mark_positions = get_highest_mark_positions()
+                break
+
+
+def print_history_behaviors(history_behaviors_list):
+    for behavior in history_behaviors_list:
+        if behavior:
+            if behavior[0] == "boom":
+                print_boom(behavior[1][0], behavior[1][1])
+            else:
+                print_move(behavior[3], behavior[1][0], behavior[1][1], behavior[2][0], behavior[2][1])
 
 
 def main():
+
     with open(sys.argv[1]) as file:
         data = json.load(file)
 
     # TODO: find and print winning action sequence
+    global mark_dict
+    global trim_board_dict
+    global history_board_list
+    global highest_mark_positions
+
+    mark_dict = {}
+    trim_board_dict = {}
+    history_board_list = []
+    highest_mark_positions = {}
+
+    # time_start = time.time()
     board_dict = initial_board(data)
+    # print_board(board_dict)
     mark_dict = cal_mark(board_dict)
 
-    print_board(mark_dict)
-    print_board(board_dict)
-    #print(potential_way(board_dict, (1, 0)))
+    trim_board_dict = trim_board(board_dict)
+    # print_board(trim_board_dict)
+    # print_board(mark_dict)
+    # print_board(board_dict, "initial")
+    # print_board(mark_dict, "initial_mark")
+    # print_board(trim_board_dict, "initial_trim")
+    get_highest_mark_positions()
 
+    board_tree = BoardNode(board_dict, [], [])
 
-    #dijsktra(board_dict, (1, 0), (3, 3))
-
-    trimed_board = trim_board(board_dict)
-    print_board(trimed_board)
+    history = BFS(board_tree)
+    # time_end = time.time()
+    # print('# Search time cost', time_end - time_start, 's')
+    print_history_behaviors(history)
+    return history
 
 
 if __name__ == '__main__':
